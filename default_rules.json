@@ -1,0 +1,132 @@
+{
+  "rules": [
+    {
+      "id": "DF-001",
+      "component": "dockerfile",
+      "description": "Base image uses ':latest' tag or has no tag",
+      "severity": "medium",
+      "check": "base_image_unversioned",
+      "recommendation": "Pin your base image to a specific version (e.g. python:3.11-slim) to guarantee reproducibility."
+    },
+    {
+      "id": "DF-002",
+      "component": "dockerfile",
+      "description": "Container runs as root user (no USER instruction or USER root)",
+      "severity": "critical",
+      "check": "running_as_root",
+      "recommendation": "Add a non-root USER instruction before CMD/ENTRYPOINT (e.g. RUN useradd -m appuser && USER appuser)."
+    },
+    {
+      "id": "DF-003",
+      "component": "dockerfile",
+      "description": "Multiple consecutive RUN instructions create unnecessary layers",
+      "severity": "low",
+      "check": "multiple_run_instructions",
+      "recommendation": "Chain RUN commands with '&&' and '\\' to reduce the number of image layers."
+    },
+    {
+      "id": "DF-004",
+      "component": "dockerfile",
+      "description": "ADD instruction used instead of COPY",
+      "severity": "low",
+      "check": "add_instead_of_copy",
+      "recommendation": "Replace ADD with COPY unless you specifically need ADD's tar-extraction or URL-fetching behaviour."
+    },
+    {
+      "id": "DF-005",
+      "component": "dockerfile",
+      "description": "No WORKDIR instruction defined",
+      "severity": "low",
+      "check": "missing_workdir",
+      "recommendation": "Define a WORKDIR to set a clear working directory and avoid ambiguity in file paths."
+    },
+    {
+      "id": "DF-006",
+      "component": "dockerfile",
+      "description": "apt-get update and apt-get install in separate RUN instructions",
+      "severity": "medium",
+      "check": "apt_get_split",
+      "recommendation": "Combine 'apt-get update' and 'apt-get install' in a single RUN instruction to avoid stale package lists."
+    },
+    {
+      "id": "IMG-001",
+      "component": "image",
+      "description": "Image has no labels (maintainer, version, etc.)",
+      "severity": "low",
+      "check": "missing_labels",
+      "recommendation": "Add LABEL instructions for at least 'maintainer' and 'version' to improve traceability."
+    },
+    {
+      "id": "IMG-002",
+      "component": "image",
+      "description": "Image contains sensitive data in environment variables (password, secret, key)",
+      "severity": "critical",
+      "check": "sensitive_env_vars",
+      "recommendation": "Never store secrets in ENV instructions. Use Docker secrets, a .env file, or a secrets manager instead."
+    },
+    {
+      "id": "IMG-003",
+      "component": "image",
+      "description": "Image has an excessive number of layers (> 20)",
+      "severity": "medium",
+      "check": "excessive_layers",
+      "recommendation": "Reduce the number of layers by combining RUN instructions and using multi-stage builds."
+    },
+    {
+      "id": "IMG-004",
+      "component": "image",
+      "description": "Image runs as root user",
+      "severity": "critical",
+      "check": "image_running_as_root",
+      "recommendation": "Ensure the image's USER is set to a non-root account in the Dockerfile."
+    },
+    {
+      "id": "IMG-005",
+      "component": "image",
+      "description": "Base image uses ':latest' tag or has no tag",
+      "severity": "medium",
+      "check": "image_base_unversioned",
+      "recommendation": "Pin the base image to a specific digest or version tag."
+    },
+    {
+      "id": "DC-001",
+      "component": "compose",
+      "description": "Service uses an image with ':latest' tag or no tag",
+      "severity": "medium",
+      "check": "compose_image_unversioned",
+      "recommendation": "Pin service images to a specific version tag to ensure reproducible deployments."
+    },
+    {
+      "id": "DC-002",
+      "component": "compose",
+      "description": "Service runs as root or has no 'user' defined",
+      "severity": "critical",
+      "check": "compose_root_user",
+      "recommendation": "Define a non-root 'user' for each service (e.g. user: '1000')."
+    },
+    {
+      "id": "DC-003",
+      "component": "compose",
+      "description": "Service exposes a plaintext password or secret in environment variables",
+      "severity": "critical",
+      "check": "compose_sensitive_env",
+      "recommendation": "Use Docker secrets or a .env file instead of hardcoding credentials in docker-compose.yml."
+    },
+    {
+      "id": "DC-004",
+      "component": "compose",
+      "description": "Service exposes a port on all interfaces (0.0.0.0) or a sensitive port",
+      "severity": "medium",
+      "check": "compose_exposed_ports",
+      "recommendation": "Bind ports to a specific interface (e.g. 127.0.0.1:8080:80) and avoid exposing privileged ports externally."
+    },
+    {
+      "id": "DC-005",
+      "component": "compose",
+      "description": "Duplicate service images detected (possible redundancy)",
+      "severity": "low",
+      "check": "compose_duplicate_images",
+      "recommendation": "Review whether duplicate service images are intentional; consider merging redundant services."
+    }
+  ]
+}
