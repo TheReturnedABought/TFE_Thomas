@@ -286,6 +286,13 @@ Tests use mocked file I/O and a mocked Docker SDK — no live Docker daemon is r
 
 ---
 
+To be added:
+
+https://medium.com/@0xfujin/10-docker-best-practices-every-developer-should-know-with-examples-11b5b26cb574
+https://www.ibm.com/support/pages/best-practices-docker-security-and-configuration
+https://www.docker.com/blog/docker-best-practices-using-tags-and-labels-to-manage-docker-image-sprawl/
+[https://www.google.com/search?q=docker+best+practices+.json&sxsrf=ANbL-n4z7CZ85cg6G23VTqJu_vPfrOa1FA:1775998876566&start=10](https://github.com/seifrajhi/Docker-Image-Building-Best-Practices)
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
