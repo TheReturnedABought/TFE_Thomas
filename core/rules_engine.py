@@ -57,6 +57,21 @@ def _apt_get_split(ctx: Dict[str, Any]) -> bool:
     return bool(ctx.get("apt_get_split", False))
 
 
+def _missing_healthcheck_dockerfile(ctx: Dict[str, Any]) -> bool:
+    """DF-007: No HEALTHCHECK instruction in Dockerfile. Source: IBM."""
+    return not ctx.get("has_healthcheck", False)
+
+
+def _apt_get_no_recommends(ctx: Dict[str, Any]) -> bool:
+    """DF-008: apt-get install without --no-install-recommends. Source: Medium/0xfujin."""
+    return bool(ctx.get("apt_get_missing_no_recommends", False))
+
+
+def _pip_no_cache_dir(ctx: Dict[str, Any]) -> bool:
+    """DF-009: pip install without --no-cache-dir. Source: Medium/0xfujin."""
+    return bool(ctx.get("pip_missing_no_cache_dir", False))
+
+
 def _missing_labels(ctx: Dict[str, Any]) -> bool:
     labels = ctx.get("labels", {})
     return not labels
@@ -66,6 +81,9 @@ def _sensitive_env_vars(ctx: Dict[str, Any]) -> bool:
     sensitive_keywords = {"password", "passwd", "secret", "api_key", "token", "private_key"}
     for env in ctx.get("env_vars", []):
         key = env.split("=")[0].lower()
+        # Skip Docker secrets file references (e.g. POSTGRES_PASSWORD_FILE)
+        if key.endswith("_file"):
+            continue
         if any(kw in key for kw in sensitive_keywords):
             return True
     return False
@@ -113,6 +131,72 @@ def _compose_duplicate_images(ctx: Dict[str, Any]) -> bool:
     return bool(ctx.get("has_duplicate_images", False))
 
 
+def _compose_privileged_mode(ctx: Dict[str, Any]) -> bool:
+    """DC-006: Container runs in privileged mode. Source: IBM."""
+    return bool(ctx.get("privileged", False))
+
+
+def _compose_volume_not_readonly(ctx: Dict[str, Any]) -> bool:
+    """DC-007: Volume not mounted as read-only. Source: IBM."""
+    return bool(ctx.get("has_writable_volumes", False))
+
+
+# --- Swarm checks -----------------------------------------------------------
+
+def _swarm_missing_replicas(ctx: Dict[str, Any]) -> bool:
+    return not ctx.get("has_replicas", False)
+
+
+def _swarm_no_resource_limits(ctx: Dict[str, Any]) -> bool:
+    return not ctx.get("has_resource_limits", False)
+
+
+def _swarm_no_resource_reservations(ctx: Dict[str, Any]) -> bool:
+    return not ctx.get("has_resource_reservations", False)
+
+
+def _swarm_no_restart_policy(ctx: Dict[str, Any]) -> bool:
+    if not ctx.get("has_restart_policy", False):
+        return True
+    # Also flag if max_attempts is not set (unbounded retries)
+    return ctx.get("restart_max_attempts") is None
+
+
+def _swarm_no_placement_constraints(ctx: Dict[str, Any]) -> bool:
+    return not ctx.get("has_placement_constraints", False)
+
+
+def _swarm_no_update_config(ctx: Dict[str, Any]) -> bool:
+    return not ctx.get("has_update_config", False)
+
+
+def _swarm_secrets_in_env(ctx: Dict[str, Any]) -> bool:
+    """Flag if sensitive data is in env vars instead of Docker secrets."""
+    return _sensitive_env_vars(ctx)
+
+
+def _swarm_image_unversioned(ctx: Dict[str, Any]) -> bool:
+    return _base_image_unversioned(ctx)
+
+
+def _swarm_default_network(ctx: Dict[str, Any]) -> bool:
+    return not ctx.get("uses_explicit_network", False)
+
+
+def _swarm_no_healthcheck(ctx: Dict[str, Any]) -> bool:
+    return not ctx.get("has_healthcheck", False)
+
+
+def _swarm_no_logging(ctx: Dict[str, Any]) -> bool:
+    """SW-011: No logging configuration. Source: AccuWeb, IBM."""
+    return not ctx.get("has_logging", False)
+
+
+def _swarm_privileged_mode(ctx: Dict[str, Any]) -> bool:
+    """SW-012: Service runs in privileged mode. Source: IBM."""
+    return bool(ctx.get("privileged", False))
+
+
 # ---------------------------------------------------------------------------
 # Registry: check name → evaluator function
 # ---------------------------------------------------------------------------
@@ -124,6 +208,9 @@ _CHECK_REGISTRY: Dict[str, CheckFn] = {
     "add_instead_of_copy":      _add_instead_of_copy,
     "missing_workdir":          _missing_workdir,
     "apt_get_split":            _apt_get_split,
+    "missing_healthcheck":      _missing_healthcheck_dockerfile,
+    "apt_get_no_recommends":    _apt_get_no_recommends,
+    "pip_no_cache_dir":         _pip_no_cache_dir,
     "missing_labels":           _missing_labels,
     "sensitive_env_vars":       _sensitive_env_vars,
     "excessive_layers":         _excessive_layers,
@@ -134,6 +221,21 @@ _CHECK_REGISTRY: Dict[str, CheckFn] = {
     "compose_sensitive_env":    _compose_sensitive_env,
     "compose_exposed_ports":    _compose_exposed_ports,
     "compose_duplicate_images": _compose_duplicate_images,
+    "compose_privileged_mode":  _compose_privileged_mode,
+    "compose_volume_not_readonly": _compose_volume_not_readonly,
+    # Swarm checks
+    "swarm_missing_replicas":      _swarm_missing_replicas,
+    "swarm_no_resource_limits":    _swarm_no_resource_limits,
+    "swarm_no_resource_reservations": _swarm_no_resource_reservations,
+    "swarm_no_restart_policy":     _swarm_no_restart_policy,
+    "swarm_no_placement_constraints": _swarm_no_placement_constraints,
+    "swarm_no_update_config":      _swarm_no_update_config,
+    "swarm_secrets_in_env":        _swarm_secrets_in_env,
+    "swarm_image_unversioned":     _swarm_image_unversioned,
+    "swarm_default_network":       _swarm_default_network,
+    "swarm_no_healthcheck":        _swarm_no_healthcheck,
+    "swarm_no_logging":            _swarm_no_logging,
+    "swarm_privileged_mode":       _swarm_privileged_mode,
 }
 
 

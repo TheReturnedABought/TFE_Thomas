@@ -89,6 +89,13 @@ Examples:
         all_parser.add_argument("--image", metavar="IMAGE", default=None, help="Local Docker image name")
         all_parser.add_argument("--dockerfile", metavar="PATH", default=None, help="Path to Dockerfile")
         all_parser.add_argument("--compose", metavar="PATH", default=None, help="Path to docker-compose.yml")
+        all_parser.add_argument("--swarm", metavar="PATH", default=None, help="Path to Swarm stack file")
+
+        # --- swarm subcommand ---
+        swarm_parser = subparsers.add_parser(
+            "swarm", help="Analyse a Docker Swarm stack file"
+        )
+        swarm_parser.add_argument("swarm_path", help="Path to the Swarm stack file")
 
         return parser
 
@@ -116,7 +123,7 @@ Examples:
     def print_summary(self, result) -> None:
         """Print a concise analysis summary to stdout."""
         print("\n" + "=" * 50)
-        print("  DockCheck — Analysis Summary")
+        print("  DockCheck - Analysis Summary")
         print("=" * 50)
 
         if result.metadata:
@@ -135,6 +142,6 @@ Examples:
                 print(f"    [{severity.upper():^8}] {count} issue(s)")
 
         if not result.issues:
-            print("    No issues detected. ✓")
+            print("    No issues detected. [OK]")
 
         print("=" * 50 + "\n")

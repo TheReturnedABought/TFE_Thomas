@@ -35,9 +35,12 @@ GOOD_DOCKERFILE = """\
 FROM python:3.11-slim
 WORKDIR /app
 COPY requirements.txt .
+RUN apt-get update && apt-get install -y --no-install-recommends curl \\
+    && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 USER appuser
+HEALTHCHECK CMD curl -f http://localhost:8080/ || exit 1
 CMD ["python", "main.py"]
 """
 
@@ -45,6 +48,7 @@ BAD_DOCKERFILE = """\
 FROM python:latest
 RUN apt-get update
 RUN apt-get install -y curl
+RUN pip install flask
 COPY . .
 CMD ["python", "app.py"]
 """
@@ -55,8 +59,10 @@ services:
   web:
     image: nginx:1.25
     ports:
-      - "8080:80"
+      - "127.0.0.1:8080:80"
     user: "1000"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
   db:
     image: postgres:15
     user: "999"
@@ -182,7 +188,7 @@ class TestDockerfilePipeline:
         report_path = generator.generate_html_report(result)
 
         assert os.path.exists(report_path)
-        with open(report_path) as f:
+        with open(report_path, encoding="utf-8") as f:
             html = f.read()
         assert "<html" in html.lower()
 
@@ -263,7 +269,7 @@ class TestComposePipeline:
         generator = ReportGenerator(config)
         report_path = generator.generate_html_report(result)
 
-        with open(report_path) as f:
+        with open(report_path, encoding="utf-8") as f:
             html = f.read()
         # Service names from BAD_COMPOSE
         assert "web" in html or "db" in html
@@ -382,7 +388,7 @@ class TestAllPipeline:
         generator = ReportGenerator(config)
         report_path = generator.generate_html_report(result)
 
-        with open(report_path) as f:
+        with open(report_path, encoding="utf-8") as f:
             html = f.read()
 
         # All four required sections from the spec
@@ -405,8 +411,8 @@ class TestExitCodes:
             f.write(GOOD_DOCKERFILE)
             df_path = f.name
 
-        with patch("sys.argv", ["dockcheck", "dockerfile", df_path,
-                                "--output", output]):
+        with patch("sys.argv", ["dockcheck", "--output", output,
+                                "dockerfile", df_path]):
             cli = CLI()
             exit_code = cli.run()
 
@@ -421,8 +427,8 @@ class TestExitCodes:
             f.write(BAD_DOCKERFILE)
             df_path = f.name
 
-        with patch("sys.argv", ["dockcheck", "dockerfile", df_path,
-                                "--output", output]):
+        with patch("sys.argv", ["dockcheck", "--output", output,
+                                "dockerfile", df_path]):
             cli = CLI()
             exit_code = cli.run()
 

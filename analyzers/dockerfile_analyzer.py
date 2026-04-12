@@ -119,6 +119,9 @@ class DockerfileAnalyzer:
             "has_add":               False,
             "multiple_run":          False,
             "apt_get_split":         False,
+            "has_healthcheck":       False,
+            "apt_get_missing_no_recommends": False,
+            "pip_missing_no_cache_dir": False,
             "env_vars":              [],
         }
 
@@ -144,6 +147,9 @@ class DockerfileAnalyzer:
             elif cmd == "ADD":
                 context["has_add"] = True
 
+            elif cmd == "HEALTHCHECK":
+                context["has_healthcheck"] = True
+
             elif cmd == "ENV":
                 # ENV KEY=VALUE  or  ENV KEY VALUE
                 if "=" in val:
@@ -162,6 +168,14 @@ class DockerfileAnalyzer:
                     apt_update_run_index = i
                 if "apt-get install" in val and "apt-get update" not in val:
                     has_apt_install = True
+
+                # DF-008: apt-get install without --no-install-recommends
+                if "apt-get install" in val and "--no-install-recommends" not in val:
+                    context["apt_get_missing_no_recommends"] = True
+
+                # DF-009: pip install without --no-cache-dir
+                if "pip install" in val and "--no-cache-dir" not in val:
+                    context["pip_missing_no_cache_dir"] = True
 
         # Multiple RUN: more than 2 consecutive RUN instructions
         run_count = sum(1 for i in instructions if i["command"] == "RUN")

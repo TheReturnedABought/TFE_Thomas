@@ -56,6 +56,10 @@ class Config:
                 getattr(args, "compose_path", None)
                 or getattr(args, "compose", None)
             ),
+            "swarm_path":       (
+                getattr(args, "swarm_path", None)
+                or getattr(args, "swarm", None)
+            ),
         }
         return cls(options)
 

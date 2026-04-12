@@ -1,0 +1,24 @@
+version: "3.8"
+services:
+  web:
+    image: nginx:1.25
+    ports:
+      - "127.0.0.1:8080:80"
+    user: "1000"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  api:
+    image: myapp:2.3
+    user: "1000"
+    environment:
+      NODE_ENV: production
+  db:
+    image: postgres:15
+    user: "999"
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

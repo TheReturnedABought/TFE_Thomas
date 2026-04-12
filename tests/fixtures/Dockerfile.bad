@@ -1,0 +1,7 @@
+FROM ubuntu:latest
+RUN apt-get update
+RUN apt-get install -y python3
+RUN pip install flask
+ADD . /app
+ENV DB_PASSWORD=supersecret
+CMD ["python3", "app.py"]

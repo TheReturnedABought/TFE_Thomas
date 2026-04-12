@@ -102,9 +102,8 @@ class TestExtractMetadata:
         mock_client = MagicMock()
         mock_client.images.get.side_effect = docker.errors.ImageNotFound("not_found")
         with patch("analyzers.image_analyzer.docker.from_env", return_value=mock_client):
-            analyzer = DockerImageAnalyzer("nonexistent:image")
-        with pytest.raises(Exception):
-            analyzer.extract_metadata()
+            with pytest.raises(docker.errors.ImageNotFound):
+                DockerImageAnalyzer("nonexistent:image")
 
 
 # ---------------------------------------------------------------------------

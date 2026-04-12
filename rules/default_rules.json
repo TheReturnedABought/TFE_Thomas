@@ -49,6 +49,30 @@
       "recommendation": "Combine 'apt-get update' and 'apt-get install' in a single RUN instruction to avoid stale package lists."
     },
     {
+      "id": "DF-007",
+      "component": "dockerfile",
+      "description": "No HEALTHCHECK instruction defined, preventing Docker from monitoring container health",
+      "severity": "medium",
+      "check": "missing_healthcheck",
+      "recommendation": "Add a HEALTHCHECK instruction to allow Docker to monitor the container's runtime state and restart it if unhealthy. Source: IBM Best Practices for Docker Security."
+    },
+    {
+      "id": "DF-008",
+      "component": "dockerfile",
+      "description": "apt-get install used without --no-install-recommends flag, pulling unnecessary packages",
+      "severity": "low",
+      "check": "apt_get_no_recommends",
+      "recommendation": "Add '--no-install-recommends' to 'apt-get install' to minimise image size by only installing explicitly required packages. Source: 10 Docker Best Practices (0xfujin)."
+    },
+    {
+      "id": "DF-009",
+      "component": "dockerfile",
+      "description": "pip install used without --no-cache-dir flag, leaving pip cache in the image layer",
+      "severity": "low",
+      "check": "pip_no_cache_dir",
+      "recommendation": "Add '--no-cache-dir' to 'pip install' to avoid storing pip's download cache in the image, reducing final image size. Source: 10 Docker Best Practices (0xfujin)."
+    },
+    {
       "id": "IMG-001",
       "component": "image",
       "description": "Image has no labels (maintainer, version, etc.)",
@@ -127,6 +151,118 @@
       "severity": "low",
       "check": "compose_duplicate_images",
       "recommendation": "Review whether duplicate service images are intentional; consider merging redundant services."
+    },
+    {
+      "id": "DC-006",
+      "component": "compose",
+      "description": "Service runs in privileged mode, granting full root capabilities on the host",
+      "severity": "critical",
+      "check": "compose_privileged_mode",
+      "recommendation": "Remove 'privileged: true' and use fine-grained 'cap_add' for only the capabilities the container requires. Source: IBM Best Practices for Docker Security."
+    },
+    {
+      "id": "DC-007",
+      "component": "compose",
+      "description": "Service mounts a volume without read-only flag for non-data directories",
+      "severity": "low",
+      "check": "compose_volume_not_readonly",
+      "recommendation": "Mount volumes as read-only (:ro) wherever write access is not needed to reduce the container's attack surface. Source: IBM Best Practices for Docker Security."
+    },
+    {
+      "id": "SW-001",
+      "component": "swarm",
+      "description": "Service has no explicit replica count defined in deploy configuration",
+      "severity": "medium",
+      "check": "swarm_missing_replicas",
+      "recommendation": "Define an explicit 'replicas' value under 'deploy' to control service scaling and avoid ambiguity."
+    },
+    {
+      "id": "SW-002",
+      "component": "swarm",
+      "description": "Service has no CPU or memory limits defined (resources.limits)",
+      "severity": "critical",
+      "check": "swarm_no_resource_limits",
+      "recommendation": "Define 'resources.limits' with CPU and memory caps to prevent a single service from monopolising cluster resources."
+    },
+    {
+      "id": "SW-003",
+      "component": "swarm",
+      "description": "Service has no CPU or memory reservations defined (resources.reservations)",
+      "severity": "low",
+      "check": "swarm_no_resource_reservations",
+      "recommendation": "Define 'resources.reservations' to guarantee a minimum allocation and improve scheduling predictability."
+    },
+    {
+      "id": "SW-004",
+      "component": "swarm",
+      "description": "Service has no restart policy defined or no bounded max_attempts",
+      "severity": "critical",
+      "check": "swarm_no_restart_policy",
+      "recommendation": "Define a 'restart_policy' with 'condition', 'delay', and bounded 'max_attempts' to avoid infinite restart loops destabilising nodes."
+    },
+    {
+      "id": "SW-005",
+      "component": "swarm",
+      "description": "Service has no placement constraints defined",
+      "severity": "low",
+      "check": "swarm_no_placement_constraints",
+      "recommendation": "Use 'placement.constraints' to control service scheduling across nodes (e.g., pin database services to specific nodes)."
+    },
+    {
+      "id": "SW-006",
+      "component": "swarm",
+      "description": "Service has no rolling update configuration (update_config)",
+      "severity": "medium",
+      "check": "swarm_no_update_config",
+      "recommendation": "Define 'update_config' with 'parallelism' and 'delay' to ensure zero-downtime deployments during rolling updates."
+    },
+    {
+      "id": "SW-007",
+      "component": "swarm",
+      "description": "Service passes sensitive data (passwords, secrets, API keys) via environment variables instead of Docker Swarm secrets",
+      "severity": "critical",
+      "check": "swarm_secrets_in_env",
+      "recommendation": "Use the Docker Swarm secrets mechanism instead of environment variables for sensitive data. Env vars may be visible in logs or 'docker inspect' output."
+    },
+    {
+      "id": "SW-008",
+      "component": "swarm",
+      "description": "Service uses ':latest' tag or unversioned image, undermining deployment reproducibility",
+      "severity": "medium",
+      "check": "swarm_image_unversioned",
+      "recommendation": "Pin service images to a specific version tag or digest to guarantee reproducible deployments across all Swarm nodes."
+    },
+    {
+      "id": "SW-009",
+      "component": "swarm",
+      "description": "Service relies on the default network instead of an explicitly defined overlay network",
+      "severity": "medium",
+      "check": "swarm_default_network",
+      "recommendation": "Attach services to explicitly defined overlay networks to enforce proper service isolation and avoid unintended cross-service communication."
+    },
+    {
+      "id": "SW-010",
+      "component": "swarm",
+      "description": "Service has no health check defined, preventing Swarm from detecting and replacing unhealthy tasks",
+      "severity": "medium",
+      "check": "swarm_no_healthcheck",
+      "recommendation": "Define a 'healthcheck' with 'test', 'interval', 'timeout', and 'retries' to allow Swarm's scheduler to detect and replace unhealthy tasks."
+    },
+    {
+      "id": "SW-011",
+      "component": "swarm",
+      "description": "Service has no logging driver configuration defined, making log aggregation and monitoring difficult",
+      "severity": "low",
+      "check": "swarm_no_logging",
+      "recommendation": "Define a 'logging' section with an appropriate driver (json-file, syslog, fluentd) and 'max-size'/'max-file' options to enable structured log collection and prevent runaway disk usage. Source: AccuWeb Swarm Best Practices, IBM Docker Security."
+    },
+    {
+      "id": "SW-012",
+      "component": "swarm",
+      "description": "Service runs in privileged mode, granting unrestricted access to the host system",
+      "severity": "critical",
+      "check": "swarm_privileged_mode",
+      "recommendation": "Remove 'privileged: true' and use the minimum required capabilities via 'cap_add'. Privileged containers bypass all security isolation. Source: IBM Best Practices for Docker Security."
     }
   ]
 }

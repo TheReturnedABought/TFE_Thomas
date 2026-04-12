@@ -19,6 +19,8 @@ from unittest.mock import patch, mock_open, MagicMock
 import yaml
 import io
 
+from tests.conftest import smart_mock_open
+
 
 # ---------------------------------------------------------------------------
 # Helper
@@ -27,7 +29,7 @@ import io
 def make_compose_analyzer(content: str):
     """Instantiate ComposeAnalyzer by patching file I/O."""
     from analyzers.compose_analyzer import ComposeAnalyzer
-    with patch("builtins.open", mock_open(read_data=content)):
+    with patch("builtins.open", side_effect=smart_mock_open("docker-compose.yml", content)):
         analyzer = ComposeAnalyzer("docker-compose.yml")
     return analyzer
 

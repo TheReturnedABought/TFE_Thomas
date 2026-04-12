@@ -1,6 +1,6 @@
 # DockCheck
 
-> Static analysis tool for Docker images, Dockerfiles and Docker Compose files.  
+> Static analysis tool for Docker images, Dockerfiles, Docker Compose files, and Docker Swarm stacks.  
 > TFE — EPHEC Haute École | Thomas Girboux | Rapporteur : Jonathan Noël | 2026
 
 ---
@@ -26,12 +26,12 @@ DockCheck is a command-line tool that performs **static analysis** of Docker env
 
 It fills a gap left by existing tools:
 
-| Tool | Dockerfile analysis | Compose analysis | HTML report |
-|------|-------------------|-----------------|-------------|
-| Hadolint | ✅ | ❌ | ❌ |
-| Dockle | ❌ | ❌ | ❌ |
-| Trivy | Partial | ❌ | ❌ |
-| **DockCheck** | **✅** | **✅** | **✅** |
+| Tool | Dockerfile | Compose | Swarm | HTML report |
+|------|-----------|---------|-------|-------------|
+| Hadolint | ✅ | ❌ | ❌ | ❌ |
+| Dockle | ❌ | ❌ | ❌ | ❌ |
+| Trivy | Partial | ❌ | ❌ | ❌ |
+| **DockCheck** | **✅** | **✅** | **✅** | **✅** |
 
 ---
 
@@ -40,7 +40,8 @@ It fills a gap left by existing tools:
 - **Dockerfile analysis** — detects bad practices: unversioned base images, running as root, multiple consecutive `RUN` instructions, `ADD` instead of `COPY`, missing `WORKDIR`, split `apt-get` calls.
 - **Docker image analysis** — extracts metadata (size, layers, base image, labels, env vars) and flags security issues via the Docker SDK (read-only).
 - **Docker Compose analysis** — validates service configurations: unversioned images, root users, hardcoded secrets in environment variables, sensitive exposed ports, duplicate services.
-- **HTML report generation** — structured report with summary, issues ranked by severity, and concrete recommendations.
+- **Docker Swarm analysis** — validates Swarm stack deployment configurations: missing replicas, resource limits/reservations, restart policies, placement constraints, rolling update configs, secrets management, image versioning, network isolation, and healthchecks.
+- **HTML report generation** — structured report with summary dashboard, issues ranked by severity, and concrete recommendations.
 - **Severity filtering** — `--severity low|medium|critical` threshold for CI/CD gate usage.
 - **Exit codes** — returns `0` (no issues) or `1` (issues found) for pipeline integration.
 - **Custom rules** — supports a custom `rules.json` file via `--rules`.
@@ -57,6 +58,7 @@ CLI (argparse)
          └── Analyzer (orchestrator)
               ├── DockerfileAnalyzer  ──► RulesEngine ──► Issue[]
               ├── ComposeAnalyzer     ──► RulesEngine ──► Issue[]
+              ├── SwarmAnalyzer       ──► RulesEngine ──► Issue[]
               └── DockerImageAnalyzer ──► RulesEngine ──► Issue[]
                         └── AnalysisResult
                                 └── ReportGenerator ──► report.html
@@ -87,21 +89,28 @@ pip install -r requirements.txt
 
 ```bash
 python main.py dockerfile ./Dockerfile
-python main.py dockerfile ./Dockerfile --output report.html --severity medium
+python main.py --output report.html --severity medium dockerfile ./Dockerfile
 ```
 
 ### Analyse a Docker Compose file
 
 ```bash
 python main.py compose ./docker-compose.yml
-python main.py compose ./docker-compose.yml --severity critical
+python main.py --severity critical compose ./docker-compose.yml
+```
+
+### Analyse a Docker Swarm stack file
+
+```bash
+python main.py swarm ./docker-stack.yml
+python main.py --output swarm_report.html swarm ./docker-stack.yml
 ```
 
 ### Analyse a local Docker image
 
 ```bash
 python main.py image nginx:latest
-python main.py image myapp:1.0 --output myapp_report.html
+python main.py --output myapp_report.html image myapp:1.0
 ```
 
 ### Run all analyses at once
@@ -111,6 +120,7 @@ python main.py all \
   --image myapp:1.0 \
   --dockerfile ./Dockerfile \
   --compose ./docker-compose.yml \
+  --swarm ./docker-stack.yml \
   --output full_report.html
 ```
 
@@ -130,6 +140,7 @@ python main.py all \
 ```
 dockcheck/
 ├── main.py                        # Entry point
+├── requirements.txt               # Project dependencies
 ├── cli/
 │   └── cli.py                     # Argument parsing & routing
 ├── core/
@@ -139,26 +150,37 @@ dockcheck/
 ├── analyzers/
 │   ├── dockerfile_analyzer.py     # Dockerfile static analysis
 │   ├── image_analyzer.py          # Docker image metadata & checks
-│   └── compose_analyzer.py        # Docker Compose static analysis
+│   ├── compose_analyzer.py        # Docker Compose static analysis
+│   └── swarm_analyzer.py          # Docker Swarm stack analysis
 ├── models/
 │   ├── issue.py                   # Issue dataclass
 │   └── analysis_result.py         # AnalysisResult dataclass
 ├── report/
-│   ├── report_generator.py        # HTML report generation
+│   ├── report_generator.py        # HTML report generation (Jinja2)
 │   └── templates/
-│       └── report.html.j2         # Jinja2 template
+│       └── report.html.j2         # Self-contained HTML template
 ├── rules/
-│   └── default_rules.json         # Built-in rules (DF-*, IMG-*, DC-*)
+│   └── default_rules.json         # Built-in rules (DF-*, IMG-*, DC-*, SW-*)
 ├── utils/
 │   ├── docker_client.py           # Docker SDK wrapper (read-only)
 │   └── performance_monitor.py     # Wall-clock timer
 └── tests/
+    ├── conftest.py                # Shared pytest fixtures
+    ├── fixtures/                  # E2E test files (good/bad/edge)
+    │   ├── Dockerfile.good
+    │   ├── Dockerfile.bad
+    │   ├── Dockerfile.edge
+    │   ├── docker-compose.good.yml
+    │   ├── docker-compose.bad.yml
+    │   ├── docker-stack.good.yml
+    │   └── docker-stack.bad.yml
     ├── unit/
     │   ├── test_dockerfile_analyzer.py
-    │   ├── test_image_analyzer.py
-    │   └── test_compose_analyzer.py
+    │   ├── test_compose_analyzer.py
+    │   ├── test_swarm_analyzer.py
+    │   └── test_full_analysis.py
     └── integration/
-        └── test_full_analysis.py
+        └── test_image_analyzer.py
 ```
 
 ---
@@ -169,24 +191,51 @@ Rules are defined in `rules/default_rules.json`. Each rule has an `id`, `severit
 
 **Built-in rules:**
 
-| ID | Component | Severity | Description |
-|----|-----------|----------|-------------|
-| DF-001 | dockerfile | medium | Unversioned base image (`:latest` or no tag) |
-| DF-002 | dockerfile | critical | Running as root (no `USER` or `USER root`) |
-| DF-003 | dockerfile | low | Multiple consecutive `RUN` instructions |
-| DF-004 | dockerfile | low | `ADD` used instead of `COPY` |
-| DF-005 | dockerfile | low | Missing `WORKDIR` |
-| DF-006 | dockerfile | medium | Split `apt-get update` / `apt-get install` |
-| IMG-001 | image | low | Missing image labels |
-| IMG-002 | image | critical | Sensitive data in environment variables |
-| IMG-003 | image | medium | Excessive layer count (> 20) |
-| IMG-004 | image | critical | Image runs as root |
-| IMG-005 | image | medium | Unversioned base image |
-| DC-001 | compose | medium | Service uses `:latest` or untagged image |
-| DC-002 | compose | critical | Service runs as root or has no `user` |
-| DC-003 | compose | critical | Hardcoded secret in environment variables |
-| DC-004 | compose | medium | Port exposed on all interfaces or sensitive port |
-| DC-005 | compose | low | Duplicate service images |
+### Dockerfile rules (DF-*)
+
+| ID | Severity | Description |
+|----|----------|-------------|
+| DF-001 | medium | Unversioned base image (`:latest` or no tag) |
+| DF-002 | critical | Running as root (no `USER` or `USER root`) |
+| DF-003 | low | Multiple consecutive `RUN` instructions |
+| DF-004 | low | `ADD` used instead of `COPY` |
+| DF-005 | low | Missing `WORKDIR` |
+| DF-006 | medium | Split `apt-get update` / `apt-get install` |
+
+### Image rules (IMG-*)
+
+| ID | Severity | Description |
+|----|----------|-------------|
+| IMG-001 | low | Missing image labels |
+| IMG-002 | critical | Sensitive data in environment variables |
+| IMG-003 | medium | Excessive layer count (> 20) |
+| IMG-004 | critical | Image runs as root |
+| IMG-005 | medium | Unversioned base image |
+
+### Compose rules (DC-*)
+
+| ID | Severity | Description |
+|----|----------|-------------|
+| DC-001 | medium | Service uses `:latest` or untagged image |
+| DC-002 | critical | Service runs as root or has no `user` |
+| DC-003 | critical | Hardcoded secret in environment variables |
+| DC-004 | medium | Port exposed on all interfaces or sensitive port |
+| DC-005 | low | Duplicate service images |
+
+### Swarm rules (SW-*)
+
+| ID | Severity | Description |
+|----|----------|-------------|
+| SW-001 | medium | No explicit replica count defined |
+| SW-002 | critical | No CPU or memory resource limits |
+| SW-003 | low | No CPU or memory resource reservations |
+| SW-004 | critical | No restart policy or unbounded max_attempts |
+| SW-005 | low | No placement constraints |
+| SW-006 | medium | No rolling update configuration |
+| SW-007 | critical | Secrets passed via env vars instead of Docker secrets |
+| SW-008 | medium | Unversioned image (`:latest` or no tag) |
+| SW-009 | medium | Default network instead of explicit overlay |
+| SW-010 | medium | No healthcheck defined |
 
 You can add custom rules by pointing `--rules` to your own JSON file following the same schema.
 
@@ -196,19 +245,21 @@ You can add custom rules by pointing `--rules` to your own JSON file following t
 
 The generated report contains:
 
-- **Summary** — target analysed, total issues, breakdown by severity.
-- **Issues** — each issue with its ID, severity badge, description, and recommendation.
+- **Summary dashboard** — total issues count with severity breakdown cards.
+- **Metadata** — target analysed, analysis timestamp.
+- **Issues** — each issue with its ID, severity badge, description, and component reference.
 - **Recommendations** — grouped actionable guidance.
+- **Performance** — analysis duration.
 
-Reports are self-contained HTML files suitable for archiving, sharing, or attaching to CI/CD pipeline artifacts.
+Reports are self-contained HTML files (inline CSS, dark theme) suitable for archiving, sharing, or attaching to CI/CD pipeline artifacts.
 
 ---
 
 ## Running Tests
 
 ```bash
-# All tests
-pytest
+# All tests (107 tests)
+pytest -v
 
 # Unit tests only
 pytest tests/unit/
@@ -216,8 +267,8 @@ pytest tests/unit/
 # Integration tests only
 pytest tests/integration/
 
-# With coverage
-pytest --cov=. --cov-report=html
+# With coverage (94%+ coverage)
+pytest --cov=. --cov-report=term-missing
 ```
 
 Tests use mocked file I/O and a mocked Docker SDK — no live Docker daemon is required to run the test suite.
@@ -231,6 +282,7 @@ Tests use mocked file I/O and a mocked Docker SDK — no live Docker daemon is r
 - **`.env` files** — dynamic values from external `.env` files are not resolved unless DockCheck has access to them.
 - **Large images** — parsing metadata for very large, multi-layer images may be CPU and memory intensive.
 - **Docker Desktop (Windows)** — minor behavioural differences compared to Linux may affect image metadata extraction in some edge cases.
+- **Swarm live state** — DockCheck analyses the static stack file, not the live cluster state. Drift between the file and deployed services is not detected.
 
 ---
 

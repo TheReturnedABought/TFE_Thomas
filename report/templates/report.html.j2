@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DockCheck — Analysis Report</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --border: #334155;
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --critical: #ef4444;
+            --critical-bg: rgba(239,68,68,0.12);
+            --medium: #f59e0b;
+            --medium-bg: rgba(245,158,11,0.12);
+            --low: #3b82f6;
+            --low-bg: rgba(59,130,246,0.12);
+            --success: #22c55e;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 2rem;
+        }
+        .container { max-width: 960px; margin: 0 auto; }
+        h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+        h2 { font-size: 1.3rem; margin: 2rem 0 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.1rem; margin: 1rem 0 0.5rem; }
+        .subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; }
+
+        /* Summary cards */
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem;
+            text-align: center;
+        }
+        .card .number { font-size: 2rem; font-weight: 700; }
+        .card .label { color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .card.critical .number { color: var(--critical); }
+        .card.medium .number { color: var(--medium); }
+        .card.low .number { color: var(--low); }
+        .card.total .number { color: var(--text); }
+        .card.success .number { color: var(--success); }
+
+        /* Metadata table */
+        .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+        .meta-table td { padding: 0.5rem 1rem; border-bottom: 1px solid var(--border); }
+        .meta-table td:first-child { color: var(--text-muted); width: 200px; font-weight: 500; }
+
+        /* Issues */
+        .issue {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem 1.2rem;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid var(--border);
+        }
+        .issue.critical { border-left-color: var(--critical); background: var(--critical-bg); }
+        .issue.medium { border-left-color: var(--medium); background: var(--medium-bg); }
+        .issue.low { border-left-color: var(--low); background: var(--low-bg); }
+        .issue-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem; }
+        .issue-id { font-weight: 600; font-family: monospace; }
+        .badge {
+            display: inline-block;
+            padding: 0.15rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .badge.critical { background: var(--critical); color: #fff; }
+        .badge.medium { background: var(--medium); color: #000; }
+        .badge.low { background: var(--low); color: #fff; }
+        .issue-component { color: var(--text-muted); font-size: 0.85rem; }
+        .issue-desc { margin: 0.3rem 0; }
+
+        /* Recommendations */
+        .recommendation {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+        .recommendation .rec-id { font-weight: 600; font-family: monospace; margin-right: 0.5rem; }
+
+        /* Footer */
+        .footer { margin-top: 3rem; text-align: center; color: var(--text-muted); font-size: 0.8rem; border-top: 1px solid var(--border); padding-top: 1rem; }
+
+        /* No issues */
+        .success-box {
+            background: rgba(34,197,94,0.12);
+            border: 1px solid var(--success);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+            color: var(--success);
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <h1>🐳 DockCheck — Analysis Report</h1>
+    <p class="subtitle">Generated on {{ generated_at }}</p>
+
+    <!-- ============================================================ -->
+    <!-- Summary -->
+    <!-- ============================================================ -->
+    <h2 id="summary">Summary</h2>
+    <div class="summary">
+        <div class="card total">
+            <div class="number">{{ total_issues }}</div>
+            <div class="label">Total Issues</div>
+        </div>
+        <div class="card critical">
+            <div class="number">{{ severity_levels.get('critical', 0) }}</div>
+            <div class="label">Critical</div>
+        </div>
+        <div class="card medium">
+            <div class="number">{{ severity_levels.get('medium', 0) }}</div>
+            <div class="label">Medium</div>
+        </div>
+        <div class="card low">
+            <div class="number">{{ severity_levels.get('low', 0) }}</div>
+            <div class="label">Low</div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- Metadata -->
+    <!-- ============================================================ -->
+    {% if metadata %}
+    <h2>Metadata</h2>
+    <table class="meta-table">
+        {% for key, value in metadata.items() %}
+        <tr>
+            <td>{{ key }}</td>
+            <td>{{ value }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    <!-- ============================================================ -->
+    <!-- Issues -->
+    <!-- ============================================================ -->
+    <h2 id="issues">Issues</h2>
+
+    {% if total_issues == 0 %}
+    <div class="success-box">✓ No issues detected — all checks passed.</div>
+    {% else %}
+
+    {% for severity in ['critical', 'medium', 'low'] %}
+    {% if issues_by_severity[severity] %}
+    <h3>{{ severity | upper }} ({{ issues_by_severity[severity] | length }})</h3>
+    {% for issue in issues_by_severity[severity] %}
+    <div class="issue {{ issue.severity }}">
+        <div class="issue-header">
+            <span class="issue-id">{{ issue.id }}</span>
+            <span class="badge {{ issue.severity }}">{{ issue.severity }}</span>
+        </div>
+        <div class="issue-component">Component: {{ issue.component }}</div>
+        <div class="issue-desc">{{ issue.description }}</div>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endfor %}
+
+    {% endif %}
+
+    <!-- ============================================================ -->
+    <!-- Recommendations -->
+    <!-- ============================================================ -->
+    {% if recommendations %}
+    <h2 id="recommendations">Recommendations</h2>
+    {% for rec in recommendations %}
+    <div class="recommendation">
+        <span class="rec-id">{{ rec.id }}</span>
+        <span class="badge {{ rec.severity }}">{{ rec.severity }}</span>
+        <p style="margin-top: 0.4rem;">{{ rec.text }}</p>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- ============================================================ -->
+    <!-- Performance -->
+    <!-- ============================================================ -->
+    {% if performance %}
+    <h2>Performance</h2>
+    <table class="meta-table">
+        {% for key, value in performance.items() %}
+        <tr>
+            <td>{{ key }}</td>
+            <td>{{ value }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    <div class="footer">
+        DockCheck — Static analysis tool for Docker environments<br>
+        TFE — EPHEC | Thomas Girboux | 2026
+    </div>
+
+</div>
+</body>
+</html>

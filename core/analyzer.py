@@ -59,6 +59,11 @@ class Analyzer:
                     result.merge(self._run_dockerfile())
                 if self._config.get_option("compose_path"):
                     result.merge(self._run_compose())
+                if self._config.get_option("swarm_path"):
+                    result.merge(self._run_swarm())
+
+            elif command == "swarm":
+                result.merge(self._run_swarm())
 
         finally:
             self._monitor.stop_timer()
@@ -92,31 +97,33 @@ class Analyzer:
         return result
 
     def _run_compose(self) -> AnalysisResult:
-        # ComposeAnalyzer will be implemented next week
-        try:
-            from analyzers.compose_analyzer import ComposeAnalyzer
-            path = self._config.get_option("compose_path")
-            rules = self._config.rules_path
-            analyzer = ComposeAnalyzer(path, rules_path=rules)
-            security_issues = analyzer.check_security_rules()
-            redundancy_issues = analyzer.detect_redundancies()
-            result = AnalysisResult(metadata={"compose_path": path})
-            result.issues = security_issues + redundancy_issues
-            return result
-        except ImportError:
-            return AnalysisResult(metadata={"compose_path": self._config.get_option("compose_path")})
+        from analyzers.compose_analyzer import ComposeAnalyzer
+        path = self._config.get_option("compose_path")
+        rules = self._config.rules_path
+        analyzer = ComposeAnalyzer(path, rules_path=rules)
+        security_issues = analyzer.check_security_rules()
+        redundancy_issues = analyzer.detect_redundancies()
+        result = AnalysisResult(metadata={"compose_path": path})
+        result.issues = security_issues + redundancy_issues
+        return result
 
     def _run_image(self) -> AnalysisResult:
-        # DockerImageAnalyzer will be implemented next week
-        try:
-            from analyzers.image_analyzer import DockerImageAnalyzer
-            image_name = self._config.get_option("image_name")
-            rules = self._config.rules_path
-            analyzer = DockerImageAnalyzer(image_name, rules_path=rules)
-            meta = analyzer.extract_metadata()
-            issues = analyzer.detect_bad_practices()
-            result = AnalysisResult(metadata=meta)
-            result.issues = issues
-            return result
-        except ImportError:
-            return AnalysisResult(metadata={"image_name": self._config.get_option("image_name")})
+        from analyzers.image_analyzer import DockerImageAnalyzer
+        image_name = self._config.get_option("image_name")
+        rules = self._config.rules_path
+        analyzer = DockerImageAnalyzer(image_name, rules_path=rules)
+        meta = analyzer.extract_metadata()
+        issues = analyzer.detect_bad_practices()
+        result = AnalysisResult(metadata=meta)
+        result.issues = issues
+        return result
+
+    def _run_swarm(self) -> AnalysisResult:
+        from analyzers.swarm_analyzer import SwarmAnalyzer
+        path = self._config.get_option("swarm_path")
+        rules = self._config.rules_path
+        analyzer = SwarmAnalyzer(path, rules_path=rules)
+        issues = analyzer.detect_bad_practices()
+        result = AnalysisResult(metadata={"swarm_path": path})
+        result.issues = issues
+        return result
