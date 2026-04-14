@@ -28,6 +28,8 @@ class Config:
     SEVERITY_ORDER = {"low": 0, "medium": 1, "critical": 2}
 
     def __init__(self, options: Dict[str, Any]) -> None:
+        if not isinstance(options, dict):
+            options = {}
         self._options = options
 
     # ------------------------------------------------------------------
@@ -36,30 +38,34 @@ class Config:
 
     @classmethod
     def from_cli(cls, args) -> Config:
-        """Build a Config from parsed argparse Namespace."""
+        """
+        Build a Config from parsed argparse Namespace.
+        Hardened to ensure path-like attributes are strings or None.
+        """
+
+        def _get_str(obj, attr):
+            val = getattr(obj, attr, None)
+            return str(val) if val is not None else None
+
         options: Dict[str, Any] = {
-            "command":          getattr(args, "command", None),
-            "output":           getattr(args, "output", "dockcheck_report.html"),
-            "severity":         getattr(args, "severity", "low"),
-            "no_report":        getattr(args, "no_report", False),
-            "rules":            getattr(args, "rules", None),
+            "command": _get_str(args, "command"),
+            "output": getattr(args, "output", "dockcheck_report.html"),
+            "severity": _get_str(args, "severity") or "low",
+            "no_report": bool(getattr(args, "no_report", False)),
+            "rules": _get_str(args, "rules"),
+            "sarif_output": getattr(args, "sarif_output", None),
             # Per-command targets
-            "image_name":       (
-                getattr(args, "image_name", None)   # "image" subcommand
-                or getattr(args, "image", None)     # "all" subcommand
+            "image_name": (
+                _get_str(args, "image_name")  # "image" subcommand
+                or _get_str(args, "image")  # "all" subcommand
             ),
-            "dockerfile_path":  (
-                getattr(args, "dockerfile_path", None)
-                or getattr(args, "dockerfile", None)
+            "dockerfile_path": (
+                _get_str(args, "dockerfile_path") or _get_str(args, "dockerfile")
             ),
-            "compose_path":     (
-                getattr(args, "compose_path", None)
-                or getattr(args, "compose", None)
+            "compose_path": (
+                _get_str(args, "compose_path") or _get_str(args, "compose")
             ),
-            "swarm_path":       (
-                getattr(args, "swarm_path", None)
-                or getattr(args, "swarm", None)
-            ),
+            "swarm_path": (_get_str(args, "swarm_path") or _get_str(args, "swarm")),
         }
         return cls(options)
 
@@ -69,6 +75,8 @@ class Config:
 
     def get_option(self, key: str, default: Any = None) -> Any:
         """Return the value for *key*, or *default* if not found."""
+        if not isinstance(key, str):
+            return default
         return self._options.get(key, default)
 
     def severity_passes(self, severity: str) -> bool:
@@ -77,10 +85,11 @@ class Config:
 
         Example: threshold="medium" → low=False, medium=True, critical=True
         """
+        if not isinstance(severity, str):
+            return False
         threshold = self._options.get("severity", "low")
-        return (
-            self.SEVERITY_ORDER.get(severity, 0)
-            >= self.SEVERITY_ORDER.get(threshold, 0)
+        return self.SEVERITY_ORDER.get(severity, 0) >= self.SEVERITY_ORDER.get(
+            threshold, 0
         )
 
     # ------------------------------------------------------------------

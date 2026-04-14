@@ -14,8 +14,8 @@ from typing import Any, Dict, List, Optional
 
 import docker
 
-from models.issue import Issue
 from core.rules_engine import RulesEngine
+from models.issue import Issue
 
 # Default rules file relative to the project root
 _DEFAULT_RULES = os.path.join(

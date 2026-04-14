@@ -3,6 +3,10 @@
 DockCheck — Static analysis tool for Docker images, Dockerfiles and Docker Compose files.
 Entry point.
 
+Author: Thomas Girboux
+Year: 2026
+TFE - EPHEC Haute École
+
 Usage:
     python main.py image <image_name> [--output <path>] [--severity <level>]
     python main.py dockerfile <path> [--output <path>]
@@ -10,13 +14,14 @@ Usage:
     python main.py all --image <image_name> --dockerfile <path> --compose <path> [--output <path>]
 """
 
-import sys
 import os
+import sys
 
 # Ensure project root is on the path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from cli.cli import CLI
+from cli.cli import CLI  # noqa: E402
+from core.i18n import get_text  # noqa: E402
 
 
 def main() -> int:

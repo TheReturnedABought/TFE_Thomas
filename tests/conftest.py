@@ -6,8 +6,8 @@ used across unit and integration tests.
 """
 
 import io
+
 import pytest
-from unittest.mock import mock_open
 
 # The real open function, saved before any patching
 _real_open = open
@@ -19,17 +19,20 @@ def smart_mock_open(target_filename: str, fake_content: str):
       - Returns fake_content for any path ending with target_filename
       - Delegates to real open() for all other files (e.g. default_rules.json)
     """
+
     def _side_effect(path, *args, **kwargs):
         path_str = str(path)
         if path_str.endswith(target_filename) or path_str == target_filename:
             return io.StringIO(fake_content)
         return _real_open(path, *args, **kwargs)
+
     return _side_effect
 
 
 # ===========================================================================
 # Dockerfile fixtures
 # ===========================================================================
+
 
 @pytest.fixture
 def dockerfile_good():
@@ -51,11 +54,7 @@ def dockerfile_good():
 @pytest.fixture
 def dockerfile_bad_root():
     """Dockerfile with :latest tag and no USER instruction (runs as root)."""
-    return (
-        "FROM python:latest\n"
-        "COPY . /app\n"
-        'CMD ["python", "app.py"]\n'
-    )
+    return "FROM python:latest\n" "COPY . /app\n" 'CMD ["python", "app.py"]\n'
 
 
 @pytest.fixture
@@ -88,6 +87,7 @@ def dockerfile_multi_run():
 # ===========================================================================
 # Docker Compose fixtures
 # ===========================================================================
+
 
 @pytest.fixture
 def compose_good():
@@ -160,6 +160,7 @@ def compose_missing_user():
 # ===========================================================================
 # Docker Swarm fixtures
 # ===========================================================================
+
 
 @pytest.fixture
 def swarm_good():
@@ -258,6 +259,7 @@ def swarm_partial():
 # ===========================================================================
 # Docker Image metadata fixtures
 # ===========================================================================
+
 
 @pytest.fixture
 def mock_image_metadata():

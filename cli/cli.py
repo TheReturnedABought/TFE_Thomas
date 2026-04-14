@@ -5,12 +5,13 @@ Maps CLI arguments to the appropriate analyzer(s) and triggers report generation
 """
 
 import argparse
-import sys
-from typing import Optional
 
-from core.config import Config
 from core.analyzer import Analyzer
+from core.autofix import DockerfileFixer, YamlFixer
+from core.config import Config
+from core.i18n import get_text, set_locale
 from report.report_generator import ReportGenerator
+from report.sarif_generator import SarifGenerator
 
 
 class CLI:
@@ -24,7 +25,10 @@ class CLI:
     def _build_parser(self) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             prog="dockcheck",
-            description="DockCheck — Static analysis for Docker images, Dockerfiles and Compose files.",
+            description=(
+                "DockCheck — Static analysis for Docker images, "
+                "Dockerfiles and Compose files."
+            ),
             formatter_class=argparse.RawDescriptionHelpFormatter,
             epilog="""
 Examples:
@@ -35,17 +39,17 @@ Examples:
             """,
         )
 
+        parser.add_argument("--version", action="version", version="DockCheck 1.0.0")
         parser.add_argument(
-            "--version", action="version", version="DockCheck 1.0.0"
-        )
-        parser.add_argument(
-            "--output", "-o",
+            "--output",
+            "-o",
             metavar="PATH",
             default="dockcheck_report.html",
             help="Path for the generated HTML report (default: dockcheck_report.html)",
         )
         parser.add_argument(
-            "--severity", "-s",
+            "--severity",
+            "-s",
             choices=self.SEVERITY_LEVELS,
             default="low",
             help="Minimum severity level to report (default: low)",
@@ -56,10 +60,29 @@ Examples:
             help="Skip HTML report generation (print summary only)",
         )
         parser.add_argument(
+            "--sarif-output",
+            metavar="PATH",
+            nargs="?",
+            const="dockcheck_report.sarif",
+            default=None,
+            help="Output SARIF format alongside/instead of HTML. Optional path.",
+        )
+        parser.add_argument(
             "--rules",
             metavar="PATH",
             default=None,
             help="Path to a custom rules JSON file",
+        )
+        parser.add_argument(
+            "--fix",
+            action="store_true",
+            help="Automatically remediate and fix static issues found natively in-place.",
+        )
+        parser.add_argument(
+            "--lang",
+            choices=["en", "fr"],
+            default="en",
+            help="Select translation dictionary for output (en/fr).",
         )
 
         subparsers = parser.add_subparsers(dest="command", required=True)
@@ -68,28 +91,36 @@ Examples:
         image_parser = subparsers.add_parser(
             "image", help="Analyse a local Docker image"
         )
-        image_parser.add_argument("image_name", help="Name or ID of the local Docker image")
+        image_parser.add_argument(
+            "image_name", help="Name or ID of the local Docker image"
+        )
 
         # --- dockerfile subcommand ---
-        df_parser = subparsers.add_parser(
-            "dockerfile", help="Analyse a Dockerfile"
-        )
+        df_parser = subparsers.add_parser("dockerfile", help="Analyse a Dockerfile")
         df_parser.add_argument("dockerfile_path", help="Path to the Dockerfile")
 
         # --- compose subcommand ---
         compose_parser = subparsers.add_parser(
             "compose", help="Analyse a docker-compose.yml file"
         )
-        compose_parser.add_argument("compose_path", help="Path to the docker-compose.yml file")
+        compose_parser.add_argument(
+            "compose_path", help="Path to the docker-compose.yml file"
+        )
 
         # --- all subcommand ---
-        all_parser = subparsers.add_parser(
-            "all", help="Run all analyses together"
+        all_parser = subparsers.add_parser("all", help="Run all analyses together")
+        all_parser.add_argument(
+            "--image", metavar="IMAGE", default=None, help="Local Docker image name"
         )
-        all_parser.add_argument("--image", metavar="IMAGE", default=None, help="Local Docker image name")
-        all_parser.add_argument("--dockerfile", metavar="PATH", default=None, help="Path to Dockerfile")
-        all_parser.add_argument("--compose", metavar="PATH", default=None, help="Path to docker-compose.yml")
-        all_parser.add_argument("--swarm", metavar="PATH", default=None, help="Path to Swarm stack file")
+        all_parser.add_argument(
+            "--dockerfile", metavar="PATH", default=None, help="Path to Dockerfile"
+        )
+        all_parser.add_argument(
+            "--compose", metavar="PATH", default=None, help="Path to docker-compose.yml"
+        )
+        all_parser.add_argument(
+            "--swarm", metavar="PATH", default=None, help="Path to Swarm stack file"
+        )
 
         # --- swarm subcommand ---
         swarm_parser = subparsers.add_parser(
@@ -103,10 +134,13 @@ Examples:
         """Parse args, run analysis, generate report. Returns exit code."""
         args = self.parser.parse_args()
 
+        # Override Locale translation dictionaries
+        set_locale(args.lang)
+
         config = Config.from_cli(args)
         analyzer = Analyzer(config)
 
-        print(f"[DockCheck] Starting analysis...")
+        print(f"[DockCheck] {get_text('cli.starting', 'Starting analysis...')}")
 
         result = analyzer.aggregate_results()
 
@@ -115,7 +149,57 @@ Examples:
         if not args.no_report:
             generator = ReportGenerator(config)
             report_path = generator.generate_html_report(result)
-            print(f"[DockCheck] Report saved to: {report_path}")
+            print(
+                f"[DockCheck] {get_text('cli.report_saved', 'Report saved to')}: {report_path}"
+            )
+
+        if args.sarif_output is not None:
+            config._options["sarif_output"] = args.sarif_output
+            sarif = SarifGenerator(config)
+            sarif_path = sarif.generate(result)
+            print(
+                f"[DockCheck] SARIF {get_text('cli.report_saved', 'Report saved to')}: {sarif_path}"
+            )
+
+        # Autofix Engine logic
+        if getattr(args, "fix", False) and result.issues:
+            print(
+                f"\n[DockCheck] {get_text('cli.fixing', 'Applying AutoFix engine...')}"
+            )
+
+            fixes = 0
+            # Target Dockerfiles
+            if getattr(args, "dockerfile_path", None):
+                fixes += DockerfileFixer.apply_fixes(
+                    args.dockerfile_path, result.issues
+                )
+            elif getattr(args, "dockerfile", None):
+                fixes += DockerfileFixer.apply_fixes(args.dockerfile, result.issues)
+
+            # Target Compose Files
+            if getattr(args, "compose_path", None):
+                fixes += YamlFixer.apply_fixes(args.compose_path, result.issues)
+            elif getattr(args, "compose", None):
+                fixes += YamlFixer.apply_fixes(args.compose, result.issues)
+
+            # Target Swarm
+            if getattr(args, "swarm_path", None):
+                fixes += YamlFixer.apply_fixes(args.swarm_path, result.issues)
+            elif getattr(args, "swarm", None):
+                fixes += YamlFixer.apply_fixes(args.swarm, result.issues)
+
+            if fixes > 0:
+                print(
+                    f"[DockCheck] {fixes} {get_text('cli.fix_applied', 'Automatic fixes applied successfully!')}"
+                )
+
+            has_high_severity = any(
+                i.severity in ["medium", "critical"] for i in result.issues
+            )
+            if has_high_severity:
+                print(
+                    f"\n[!] {get_text('cli.manual_review_warning', 'Warning: Higher severity rules (Critical/Medium) often require manual engineering review.')}"
+                )
 
         # Exit code 1 if any issues found (useful for CI/CD pipelines)
         return 1 if result.issues else 0
