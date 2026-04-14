@@ -11,7 +11,7 @@ Aggregates everything produced by one or more analyzers:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
 from models.issue import Issue
 
@@ -25,7 +25,9 @@ class AnalysisResult:
     performance_metrics: Dict[str, Any] = field(default_factory=dict)
 
     # Computed on first access via property
-    _severity_levels: Dict[str, int] = field(default_factory=dict, repr=False, init=False)
+    _severity_levels: Dict[str, int] = field(
+        default_factory=dict, repr=False, init=False
+    )
 
     # ------------------------------------------------------------------
     # Severity breakdown

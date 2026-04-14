@@ -10,13 +10,12 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
-from typing import Optional
 
 from jinja2 import Environment, FileSystemLoader
 
 from core.config import Config
+from core.i18n import get_text
 from models.analysis_result import AnalysisResult
-
 
 _TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "templates")
 
@@ -60,11 +59,13 @@ class ReportGenerator:
         seen = set()
         for issue in result.issues:
             if issue.recommendation not in seen:
-                recommendations.append({
-                    "id": issue.id,
-                    "severity": issue.severity,
-                    "text": issue.recommendation,
-                })
+                recommendations.append(
+                    {
+                        "id": issue.id,
+                        "severity": issue.severity,
+                        "text": issue.recommendation,
+                    }
+                )
                 seen.add(issue.recommendation)
 
         html = template.render(
@@ -76,6 +77,7 @@ class ReportGenerator:
             issues_by_severity=issues_by_severity,
             recommendations=recommendations,
             performance=result.performance_metrics,
+            get_text=get_text,
         )
 
         output_path = self._config.output_path

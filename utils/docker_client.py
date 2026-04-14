@@ -8,11 +8,9 @@ strictly read-only — no containers are started, stopped, or modified.
 
 from __future__ import annotations
 
-from typing import Optional
-
 try:
     import docker
-    from docker.models.images import Image
+
     _DOCKER_AVAILABLE = True
 except ImportError:
     _DOCKER_AVAILABLE = False
@@ -63,7 +61,9 @@ class DockerClient:
             docker.errors.DockerException: if the daemon is not reachable.
         """
         if self._client is None:
-            raise RuntimeError("Docker SDK is not installed or Docker daemon is unavailable.")
+            raise RuntimeError(
+                "Docker SDK is not installed or Docker daemon is unavailable."
+            )
         return self._client.images.get(name)
 
     # ------------------------------------------------------------------

@@ -10,11 +10,23 @@ No Docker daemon is required — this is pure file-level static analysis.
 from __future__ import annotations
 
 import os
-import re
 from typing import Any, Dict, List, Optional
 
-from models.issue import Issue
+from core.ast import (
+    AddNode,
+    CopyNode,
+    DockerNode,
+    EnvNode,
+    FromNode,
+    HealthcheckNode,
+    LabelNode,
+    RunNode,
+    UserNode,
+    WorkdirNode,
+)
+from core.parser.dockerfile_parser import DockerfileParser
 from core.rules_engine import RulesEngine
+from models.issue import Issue
 
 # Default rules file relative to the project root
 _DEFAULT_RULES = os.path.join(
@@ -52,42 +64,23 @@ class DockerfileAnalyzer:
     # Public: parsing
     # ------------------------------------------------------------------
 
-    def parse_dockerfile(self) -> List[Dict[str, str]]:
+    def parse_dockerfile(self) -> List[DockerNode]:
         """
-        Parse the Dockerfile into a list of instruction dicts.
-
-        Each dict has:
-            "command" — the Dockerfile keyword (FROM, RUN, COPY, …)
-            "value"   — the rest of the line (argument)
+        Parse the Dockerfile into a list of AST Node objects.
 
         Returns:
-            list of instruction dicts (empty list for an empty Dockerfile).
+            list of DockerNode derivatives (empty list for an empty Dockerfile).
         """
         if self._instructions is not None:
             return self._instructions
 
-        instructions: List[Dict[str, str]] = []
         if not self._content:
-            self._instructions = instructions
-            return instructions
+            self._instructions = []
+            return self._instructions
 
-        # Join continuation lines (backslash at end of line)
-        joined = re.sub(r"\\\n", " ", self._content)
-
-        for raw_line in joined.splitlines():
-            line = raw_line.strip()
-            # Skip blank lines and comments
-            if not line or line.startswith("#"):
-                continue
-            # Split on first whitespace to separate keyword from value
-            parts = line.split(None, 1)
-            instructions.append({
-                "command": parts[0].upper(),
-                "value":   parts[1] if len(parts) > 1 else "",
-            })
-
-        self._instructions = instructions
-        return instructions
+        parser = DockerfileParser()
+        self._instructions = parser.parse(self._content)
+        return self._instructions
 
     # ------------------------------------------------------------------
     # Public: analysis
@@ -108,83 +101,80 @@ class DockerfileAnalyzer:
     # Context builder — translates parsed instructions into rule inputs
     # ------------------------------------------------------------------
 
-    def _build_context(self, instructions: List[Dict[str, str]]) -> Dict[str, Any]:
-        """Convert the instruction list into a context dict for the RulesEngine."""
+    def _build_context(self, instructions: List[DockerNode]) -> Dict[str, Any]:
+        """Convert the AST node list into a context dict for the RulesEngine."""
+
+        if not isinstance(instructions, list):
+            return {"component": "dockerfile"}
 
         context: Dict[str, Any] = {
-            "component":             "dockerfile",
-            "base_image":            "",
-            "user":                  "",       # last USER instruction value
-            "has_workdir":           False,
-            "has_add":               False,
-            "multiple_run":          False,
-            "apt_get_split":         False,
-            "has_healthcheck":       False,
+            "component": "dockerfile",
+            "base_image": "",
+            "user": "",  # last USER instruction value
+            "has_workdir": False,
+            "has_add": False,
+            "multiple_run": False,
+            "apt_get_split": False,
+            "has_healthcheck": False,
             "apt_get_missing_no_recommends": False,
             "pip_missing_no_cache_dir": False,
-            "env_vars":              [],
+            "env_vars": [],
+            "user_is_explicit": False,
         }
 
-        run_instructions: List[str] = []
         has_apt_update = False
         has_apt_install = False
-        apt_update_run_index: Optional[int] = None
+        run_count = 0
 
-        for i, instr in enumerate(instructions):
-            cmd = instr["command"]
-            val = instr["value"].strip()
+        for node in instructions:
+            if not isinstance(node, DockerNode):
+                continue
 
-            if cmd == "FROM":
-                # Handle "FROM image AS alias" — take only the image part
-                context["base_image"] = val.split()[0] if val else ""
+            if isinstance(node, FromNode):
+                if node.image:
+                    context["base_image"] = (
+                        f"{node.image}:{node.tag}" if node.tag else node.image
+                    )
 
-            elif cmd == "USER":
-                context["user"] = val.split()[0] if val else ""
+            elif isinstance(node, UserNode):
+                context["user"] = node.user
+                context["user_is_explicit"] = True
 
-            elif cmd == "WORKDIR":
+            elif isinstance(node, WorkdirNode):
                 context["has_workdir"] = True
 
-            elif cmd == "ADD":
+            elif isinstance(node, AddNode):
                 context["has_add"] = True
 
-            elif cmd == "HEALTHCHECK":
+            elif isinstance(node, HealthcheckNode):
                 context["has_healthcheck"] = True
 
-            elif cmd == "ENV":
-                # ENV KEY=VALUE  or  ENV KEY VALUE
-                if "=" in val:
-                    context["env_vars"].append(val.split("=", 1)[0] + "=" + val.split("=", 1)[1])
-                else:
-                    # Legacy "ENV KEY VALUE" syntax
-                    parts = val.split(None, 1)
-                    if len(parts) == 2:
-                        context["env_vars"].append(f"{parts[0]}={parts[1]}")
+            elif isinstance(node, EnvNode):
+                context["env_vars"].append(f"{node.key}={node.value}")
 
-            elif cmd == "RUN":
-                run_instructions.append(val)
-                # Check for split apt-get update / install
-                if "apt-get update" in val and "apt-get install" not in val:
-                    has_apt_update = True
-                    apt_update_run_index = i
-                if "apt-get install" in val and "apt-get update" not in val:
-                    has_apt_install = True
+            elif isinstance(node, RunNode):
+                run_count += 1
+                for cmd in node.commands:
+                    val = cmd.lower()
+                    if "apt-get update" in val and "apt-get install" not in val:
+                        has_apt_update = True
+                    if "apt-get install" in val and "apt-get update" not in val:
+                        has_apt_install = True
 
-                # DF-008: apt-get install without --no-install-recommends
-                if "apt-get install" in val and "--no-install-recommends" not in val:
-                    context["apt_get_missing_no_recommends"] = True
+                    # DF-008: apt-get install without --no-install-recommends
+                    if (
+                        "apt-get install" in val
+                        and "--no-install-recommends" not in val
+                    ):
+                        context["apt_get_missing_no_recommends"] = True
 
-                # DF-009: pip install without --no-cache-dir
-                if "pip install" in val and "--no-cache-dir" not in val:
-                    context["pip_missing_no_cache_dir"] = True
+                    # DF-009: pip install without --no-cache-dir
+                    if "pip install" in val and "--no-cache-dir" not in val:
+                        context["pip_missing_no_cache_dir"] = True
 
-        # Multiple RUN: more than 2 consecutive RUN instructions
-        run_count = sum(1 for i in instructions if i["command"] == "RUN")
         context["multiple_run"] = run_count > 2
-
-        # Split apt-get
         context["apt_get_split"] = has_apt_update and has_apt_install
 
-        # If no USER was ever set, default to root
         if not context["user"]:
             context["user"] = "root"
 

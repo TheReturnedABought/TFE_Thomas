@@ -14,8 +14,8 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 
-from models.issue import Issue
 from core.rules_engine import RulesEngine
+from models.issue import Issue
 
 # Default rules file relative to the project root
 _DEFAULT_RULES = os.path.join(
@@ -121,7 +121,9 @@ class ComposeAnalyzer:
                     "component": "compose",
                     "has_duplicate_images": True,
                 }
-                dup_issues = self._engine.evaluate_all(context, component_filter="compose")
+                dup_issues = self._engine.evaluate_all(
+                    context, component_filter="compose"
+                )
                 for issue in dup_issues:
                     if issue.id == "DC-005":
                         issue.component = f"compose/{','.join(svc_names)}"
@@ -137,6 +139,9 @@ class ComposeAnalyzer:
         self, svc_name: str, svc_config: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Build a context dict for a single Compose service."""
+        if not isinstance(svc_config, dict):
+            return {"component": "compose"}
+
         image = svc_config.get("image", "")
         user = str(svc_config.get("user", "")).strip()
 
@@ -163,7 +168,11 @@ class ComposeAnalyzer:
             if ":" in vol_str and not vol_str.endswith(":ro"):
                 # Check if it's a bind mount (starts with / or ./)
                 source = vol_str.split(":")[0]
-                if source.startswith("/") or source.startswith("./") or source.startswith("../"):
+                if (
+                    source.startswith("/")
+                    or source.startswith("./")
+                    or source.startswith("../")
+                ):
                     has_writable_volumes = True
                     break
 

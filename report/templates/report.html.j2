@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DockCheck — Analysis Report</title>
+    <title>{{ get_text('html.title', 'DockCheck — Analysis Report') }}</title>
     <style>
         :root {
             --bg: #0f172a;
@@ -118,29 +118,29 @@
 <body>
 <div class="container">
 
-    <h1>🐳 DockCheck — Analysis Report</h1>
-    <p class="subtitle">Generated on {{ generated_at }}</p>
+    <h1>🐳 {{ get_text('html.title', 'DockCheck — Analysis Report') }}</h1>
+    <p class="subtitle">{{ get_text('html.generated_on', 'Generated on') }} {{ generated_at }}</p>
 
     <!-- ============================================================ -->
     <!-- Summary -->
     <!-- ============================================================ -->
-    <h2 id="summary">Summary</h2>
+    <h2 id="summary">{{ get_text('html.summary', 'Summary') }}</h2>
     <div class="summary">
         <div class="card total">
             <div class="number">{{ total_issues }}</div>
-            <div class="label">Total Issues</div>
+            <div class="label">{{ get_text('html.total_issues', 'Total Issues') }}</div>
         </div>
         <div class="card critical">
             <div class="number">{{ severity_levels.get('critical', 0) }}</div>
-            <div class="label">Critical</div>
+            <div class="label">{{ get_text('html.critical', 'Critical') }}</div>
         </div>
         <div class="card medium">
             <div class="number">{{ severity_levels.get('medium', 0) }}</div>
-            <div class="label">Medium</div>
+            <div class="label">{{ get_text('html.medium', 'Medium') }}</div>
         </div>
         <div class="card low">
             <div class="number">{{ severity_levels.get('low', 0) }}</div>
-            <div class="label">Low</div>
+            <div class="label">{{ get_text('html.low', 'Low') }}</div>
         </div>
     </div>
 
@@ -148,7 +148,7 @@
     <!-- Metadata -->
     <!-- ============================================================ -->
     {% if metadata %}
-    <h2>Metadata</h2>
+    <h2>{{ get_text('html.metadata', 'Metadata') }}</h2>
     <table class="meta-table">
         {% for key, value in metadata.items() %}
         <tr>
@@ -162,23 +162,23 @@
     <!-- ============================================================ -->
     <!-- Issues -->
     <!-- ============================================================ -->
-    <h2 id="issues">Issues</h2>
+    <h2 id="issues">{{ get_text('html.issues', 'Issues') }}</h2>
 
     {% if total_issues == 0 %}
-    <div class="success-box">✓ No issues detected — all checks passed.</div>
+    <div class="success-box">✓ {{ get_text('html.no_issues_detected', 'No issues detected — all checks passed.') }}</div>
     {% else %}
 
     {% for severity in ['critical', 'medium', 'low'] %}
     {% if issues_by_severity[severity] %}
-    <h3>{{ severity | upper }} ({{ issues_by_severity[severity] | length }})</h3>
+    <h3>{{ get_text('severity_' ~ severity, severity) | upper }} ({{ issues_by_severity[severity] | length }})</h3>
     {% for issue in issues_by_severity[severity] %}
     <div class="issue {{ issue.severity }}">
         <div class="issue-header">
             <span class="issue-id">{{ issue.id }}</span>
             <span class="badge {{ issue.severity }}">{{ issue.severity }}</span>
         </div>
-        <div class="issue-component">Component: {{ issue.component }}</div>
-        <div class="issue-desc">{{ issue.description }}</div>
+        <div class="issue-component">{{ get_text('html.component', 'Component:') }} {{ get_text('html.format_' ~ issue.component, issue.component) }}</div>
+        <div class="issue-desc">{{ get_text('rule_desc_' ~ issue.id, issue.description) }}</div>
     </div>
     {% endfor %}
     {% endif %}
@@ -190,12 +190,12 @@
     <!-- Recommendations -->
     <!-- ============================================================ -->
     {% if recommendations %}
-    <h2 id="recommendations">Recommendations</h2>
+    <h2 id="recommendations">{{ get_text('html.recommendations', 'Recommendations') }}</h2>
     {% for rec in recommendations %}
     <div class="recommendation">
         <span class="rec-id">{{ rec.id }}</span>
-        <span class="badge {{ rec.severity }}">{{ rec.severity }}</span>
-        <p style="margin-top: 0.4rem;">{{ rec.text }}</p>
+        <span class="badge {{ rec.severity }}">{{ get_text('severity_' ~ rec.severity, rec.severity) }}</span>
+        <p style="margin-top: 0.4rem;">{{ get_text('rule_rec_' ~ rec.id, rec.text) }}</p>
     </div>
     {% endfor %}
     {% endif %}
@@ -204,7 +204,7 @@
     <!-- Performance -->
     <!-- ============================================================ -->
     {% if performance %}
-    <h2>Performance</h2>
+    <h2>{{ get_text('html.performance', 'Performance') }}</h2>
     <table class="meta-table">
         {% for key, value in performance.items() %}
         <tr>
@@ -216,8 +216,8 @@
     {% endif %}
 
     <div class="footer">
-        DockCheck — Static analysis tool for Docker environments<br>
-        TFE — EPHEC | Thomas Girboux | 2026
+        {{ get_text('html.footer_desc', 'DockCheck — Static analysis tool for Docker environments') }}<br>
+        {{ get_text('html.footer_author', 'TFE — EPHEC | Thomas Girboux | 2026') }}
     </div>
 
 </div>

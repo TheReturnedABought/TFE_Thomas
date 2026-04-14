@@ -6,9 +6,8 @@ a human-readable description, the component it belongs to, and a concrete
 recommendation for fixing it.
 """
 
-from dataclasses import dataclass, field
-from typing import ClassVar, Set
-
+from dataclasses import dataclass
+from typing import Set
 
 VALID_SEVERITIES: Set[str] = {"low", "medium", "critical"}
 
@@ -24,6 +23,15 @@ class Issue:
     recommendation: str
 
     def __post_init__(self) -> None:
+        # Type coercion (discovered via Deep Chaos Monte Carlo)
+        self.id = str(self.id) if self.id is not None else ""
+        self.description = str(self.description) if self.description is not None else ""
+        self.severity = str(self.severity) if self.severity is not None else ""
+        self.component = str(self.component) if self.component is not None else ""
+        self.recommendation = (
+            str(self.recommendation) if self.recommendation is not None else ""
+        )
+
         if not self.id or not self.id.strip():
             raise ValueError("Issue.id must not be empty.")
         if not self.description or not self.description.strip():

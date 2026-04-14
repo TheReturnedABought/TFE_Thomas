@@ -18,8 +18,8 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 
-from models.issue import Issue
 from core.rules_engine import RulesEngine
+from models.issue import Issue
 
 # Default rules file relative to the project root
 _DEFAULT_RULES = os.path.join(
@@ -77,6 +77,9 @@ class SwarmAnalyzer:
         """
         issues: List[Issue] = []
         services = self._data.get("services", {})
+        if not isinstance(services, dict):
+            return []
+
         top_level_networks = self._data.get("networks", {})
 
         for svc_name, svc_config in services.items():
@@ -85,9 +88,7 @@ class SwarmAnalyzer:
             context = self._build_service_context(
                 svc_name, svc_config, top_level_networks
             )
-            svc_issues = self._engine.evaluate_all(
-                context, component_filter="swarm"
-            )
+            svc_issues = self._engine.evaluate_all(context, component_filter="swarm")
             # Tag each issue with the service name
             for issue in svc_issues:
                 issue.component = f"swarm/{svc_name}"
@@ -106,6 +107,8 @@ class SwarmAnalyzer:
         top_level_networks: Dict[str, Any],
     ) -> Dict[str, Any]:
         """Build a context dict for a single Swarm service."""
+        if not isinstance(svc_config, dict):
+            return {"component": "swarm"}
 
         deploy = svc_config.get("deploy", {}) or {}
         resources = deploy.get("resources", {}) or {}
