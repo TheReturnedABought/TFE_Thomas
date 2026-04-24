@@ -29,6 +29,13 @@ services:
             "SW-008" in i.id or "swarm_image_unversioned" in i.id for i in issues
         )
 
+    def test_analyze_services_empty(self, tmp_path):
+        f = tmp_path / "stack.yml"
+        f.write_text("services: null")
+        analyzer = SwarmAnalyzer(str(f))
+        assert analyzer.analyze_services() == []
+        assert analyzer.detect_bad_practices() == []
+
 
 class Test_SwarmAnalyzer_detect_bad_practices:
     def test_missing_deploy_configs(self, tmp_path):
@@ -45,6 +52,12 @@ services:
         # Should catch missing replicas, resource limits, etc.
         assert any("SW-001" in i.id for i in issues)  # replicas
         assert any("SW-002" in i.id for i in issues)  # limits
+
+    def test_detect_bad_practices_invalid_dict(self, tmp_path):
+        f = tmp_path / "stack.yml"
+        f.write_text("services:\n  web: []")
+        analyzer = SwarmAnalyzer(str(f))
+        assert analyzer.detect_bad_practices() == []
 
 
 class Test_SwarmAnalyzer__build_service_context:
@@ -75,6 +88,19 @@ class Test_SwarmAnalyzer__build_service_context:
         svc_config["networks"] = {"backend": {}}
         ctx = analyzer._build_service_context("c2", svc_config, {"backend": {}})
         assert ctx["uses_explicit_network"] is True
+
+    def test_build_context_edge_cases(self, tmp_path):
+        f = tmp_path / "stack.yml"
+        f.write_text("services: {}")
+        analyzer = SwarmAnalyzer(str(f))
+        assert analyzer._build_service_context("web", None, {})["component"] == "swarm"
+        
+        ctx = analyzer._build_service_context("web", {"environment": ["A=B"], "volumes": ["/host:/container"]}, {})
+        assert "A=B" in ctx["env_vars"]
+        assert ctx["volume_missing_type"] is True
+        
+        ctx2 = analyzer._build_service_context("web", {"environment": {"C": "D"}}, {})
+        assert "C=D" in ctx2["env_vars"]
 
 
 class Test_SwarmAnalyzer__load:

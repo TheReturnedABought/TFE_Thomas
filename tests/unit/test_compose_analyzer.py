@@ -29,6 +29,12 @@ class Test_ComposeAnalyzer_analyze_services:
             "DC-001" in i.id or "compose_image_unversioned" in i.id for i in issues
         )
 
+    def test_analyze_services_empty(self, tmp_path):
+        f = tmp_path / "compose.yml"
+        f.write_text("services: null")
+        analyzer = ComposeAnalyzer(str(f))
+        assert analyzer.analyze_services() == []
+
 
 class Test_ComposeAnalyzer_detect_redundancies:
     def test_duplicate_images(self, tmp_path):
@@ -45,6 +51,12 @@ services:
         analyzer = ComposeAnalyzer(str(f))
         issues = analyzer.detect_redundancies()
         assert any("DC-005" in i.id for i in issues)
+
+    def test_redundancies_invalid_dict(self, tmp_path):
+        f = tmp_path / "compose.yml"
+        f.write_text("services:\n  web: []")
+        analyzer = ComposeAnalyzer(str(f))
+        assert analyzer.detect_redundancies() == []
 
 
 class Test_ComposeAnalyzer__build_service_context:
@@ -64,6 +76,22 @@ class Test_ComposeAnalyzer__build_service_context:
         assert ctx["user"] == "root"
         assert ctx["privileged"] is True
         assert "SECRET=123" in ctx["env_vars"]
+
+    def test_build_context_edge_cases(self, tmp_path):
+        f = tmp_path / "compose.yml"
+        f.write_text("services: {}")
+        analyzer = ComposeAnalyzer(str(f))
+        assert analyzer._build_service_context("web", None)["component"] == "compose"
+        
+        vols = ["/host:/container", "../relative:/container"]
+        ctx = analyzer._build_service_context("web", {"volumes": vols})
+        assert ctx["has_writable_volumes"] is True
+        
+        ctx2 = analyzer._build_service_context("web", {"environment": ["A=B"]})
+        assert "A=B" in ctx2["env_vars"]
+        
+        ctx3 = analyzer._build_service_context("web", {"environment": {"C": "D"}})
+        assert "C=D" in ctx3["env_vars"]
 
 
 class Test_ComposeAnalyzer__load:

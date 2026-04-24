@@ -146,11 +146,46 @@ python main.py all \
 |--------|---------|-------------|
 | `--output`, `-o` | `dockcheck_report.html` | Path for the HTML report |
 | `--sarif-output` | `dockcheck_report.sarif` | Generates a SARIF file alongside HTML for CI/CD SAST dashboard aggregation |
-| `--fix` | false | Automatically mitigates static issues on targeted files natively |
+| `--fix` | false | Automatically mitigates simple static issues natively. For complex issues, outputs a warning explicitly flagged for manual engineering review. |
 | `--lang` | `en` | Overrides reporting strings localization (supports `en`, `fr`) |
 | `--severity`, `-s` | `low` | Minimum severity to report (`low`, `medium`, `critical`) |
 | `--no-report` | false | Skip HTML generation, print summary only |
 | `--rules` | built-in | Path to a custom rules JSON file |
+
+---
+
+## Custom Rules & AutoFixing
+
+DockCheck supports injecting custom rules through standard JSON schemas using the `--rules` flag. By adding a declarative `"autofix"` metadata block, your custom rules become natively supported by the `--fix` automated mitigation engine!
+
+### Defining a Custom Rule
+
+Create a `custom_rules.json` file and pass it via `--rules custom_rules.json`. The syntax allows targeting any string natively. 
+
+```json
+{
+  "rules": [
+    {
+      "id": "CUST-001",
+      "component": "dockerfile",
+      "description": "Always replace 'python:latest' with 'python:slim'",
+      "severity": "low",
+      "check": "base_image_unversioned",
+      "recommendation": "Use slim variant.",
+      "autofix": {
+        "supported": true,
+        "strategy": "replace_string",
+        "target": ":latest",
+        "replacement": ":slim"
+      }
+    }
+  ]
+}
+```
+
+The engine currently supports two fundamental structural strategies natively without requiring Python extensions:
+- **`replace_string` (Dockerfile)**: Parses and substitutes direct text matching inside active statements.
+- **`set_key` (Compose/Swarm YAML)**: Blindly assigns the key-value dictionary mappings natively to bypass node limits.
 
 ---
 
@@ -236,6 +271,16 @@ Rules are defined in `rules/default_rules.json`. Each rule has an `id`, `severit
 | DF-004 | low | `ADD` used instead of `COPY` |
 | DF-005 | low | Missing `WORKDIR` |
 | DF-006 | medium | Split `apt-get update` / `apt-get install` |
+| DF-010 | low | apk add used without --no-cache |
+| DF-011 | low | yum install used without repository cleanup |
+| DF-012 | medium | curl used without silent-fail flags (-fSL) |
+| DF-013 | low | wget used without quiet-output stream bindings |
+| DF-014 | critical | sudo executed during Docker build |
+| DF-015 | low | apt-get install used without footprint cleanup |
+| DF-016 | low | No EXPOSE network port mappings declared |
+| DF-017 | low | Use of deprecated MAINTAINER tag |
+| DF-018 | medium | Inline path traversals (cd) rather than deterministic WORKDIR |
+| DF-019 | low | npm install used without clearing node caching |
 
 ### Image rules (IMG-*)
 
@@ -246,6 +291,11 @@ Rules are defined in `rules/default_rules.json`. Each rule has an `id`, `severit
 | IMG-003 | medium | Excessive layer count (> 20) |
 | IMG-004 | critical | Image runs as root |
 | IMG-005 | medium | Unversioned base image |
+| IMG-006 | medium | Total image payload significantly exceeds 1GB limit |
+| IMG-007 | low | Virtual network mappings lack ExposedPorts structure definitions |
+| IMG-008 | critical | Scratch infrastructure defaults silently back to unregulated ROOT mappings |
+| IMG-009 | medium | Production configurations rely implicitly upon 'latest' tag allocations |
+| IMG-010 | medium | Constructed object artifacts miss active daemon process triggers (CMD/ENTRYPOINT) |
 
 ### Compose rules (DC-*)
 
@@ -329,6 +379,10 @@ The rules and best practices implemented in DockCheck are derived from industry-
 - **[10 Docker Best Practices for Security](https://blog.aquasec.com/docker-security-best-practices)** — Basis for `ADD` vs `COPY`, `apt-get` optimization, and layer reduction.
 - **[AccuWeb Swarm Recommendations](https://www.accuwebhosting.com/blog/docker-swarm-best-practices/)** — Basis for resource limits, secrets management, and network isolation rules in Swarm.
 - **[Official Docker Documentation](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)** — General syntax and structural standards.
+
+- **NIST Application Container Security Guide (SP 800-190)** — Foundation for host PID, IPC, and network mode mapping strict isolation boundaries.
+- **Node.js Docker Best Practices** — Basis for cache clearing requirements inside 'npm' runtime construction.
+- **Docker Official Swarm Update Configurations** — Recommended metrics guiding zero-downtime rolling update 'order' priorities and 'delay' limits.
 
 ---
 

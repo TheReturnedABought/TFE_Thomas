@@ -62,6 +62,24 @@ class DockerfileFixer:
                     lines[i] = line.replace("pip install", "pip install --no-cache-dir")
                     fixes_applied += 1
 
+            # Dynamic Custom Autofix parsing
+            for issue in issues:
+                if issue.autofix and issue.autofix.get("supported"):
+                    if issue.autofix.get("strategy") == "replace_string":
+                        target = issue.autofix.get("target")
+                        rep = issue.autofix.get("replacement")
+                        if target and rep and target in lines[i]:
+                            lines[i] = lines[i].replace(target, rep)
+                            fixes_applied += 1
+
+        # DF-005: Inject WORKDIR
+        if "DF-005" in rule_ids:
+            for i, line in enumerate(lines):
+                if line.strip().upper().startswith(("COPY ", "ADD ", "RUN ", "CMD ", "ENTRYPOINT ")):
+                    lines.insert(i, "WORKDIR /app\n")
+                    fixes_applied += 1
+                    break
+
         # DF-002: Inject USER
         if "DF-002" in rule_ids:
             # We must be careful not to inject it duplicate times if already fixed

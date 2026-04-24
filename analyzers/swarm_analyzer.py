@@ -157,6 +157,20 @@ class SwarmAnalyzer:
         # Deploy mode
         deploy_mode = deploy.get("mode", "replicated")
 
+        # SW-013 to SW-017 Custom Evaluations
+        has_stop_grace_period = bool(svc_config.get("stop_grace_period"))
+        endpoint_mode = str(deploy.get("endpoint_mode", "")).lower()
+        update_order = str(update_config.get("order", "stop-first")).lower()
+        
+        delay_val = str(restart_policy.get("delay", "")).strip()
+        restart_delay_missing_or_short = not delay_val or delay_val in ("0s", "0m", "0")
+        
+        volume_missing_type = False
+        for vol in svc_config.get("volumes", []):
+            if isinstance(vol, str):
+                volume_missing_type = True
+                break
+
         return {
             "component": "swarm",
             "base_image": image,
@@ -188,4 +202,10 @@ class SwarmAnalyzer:
             "user": str(svc_config.get("user", "")).strip() or "root",
             # Privileged
             "privileged": privileged,
+            # SW-013 to SW-017 variables
+            "has_stop_grace_period": has_stop_grace_period,
+            "endpoint_mode": endpoint_mode,
+            "update_order": update_order,
+            "restart_delay_missing_or_short": restart_delay_missing_or_short,
+            "volume_missing_type": volume_missing_type,
         }

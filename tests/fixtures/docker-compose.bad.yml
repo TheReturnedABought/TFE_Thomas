@@ -2,6 +2,16 @@ version: "3.8"
 services:
   web:
     image: nginx:latest
+    container_name: forced_name
+    network_mode: "host"
+    pid: "host"
+    ipc: "host"
+    mac_address: "02:42:ac:11:00:02"
+    dns:
+      - 8.8.8.8
+    cap_add:
+      - ALL
+      - SYS_ADMIN
     ports:
       - "0.0.0.0:80:80"
       - "22:22"

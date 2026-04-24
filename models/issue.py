@@ -21,6 +21,7 @@ class Issue:
     severity: str
     component: str
     recommendation: str
+    autofix: dict = None
 
     def __post_init__(self) -> None:
         # Type coercion (discovered via Deep Chaos Monte Carlo)
@@ -59,4 +60,5 @@ class Issue:
             and self.severity == other.severity
             and self.component == other.component
             and self.recommendation == other.recommendation
+            and self.autofix == other.autofix
         )

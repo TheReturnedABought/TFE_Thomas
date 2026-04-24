@@ -80,9 +80,9 @@ Examples:
         )
         parser.add_argument(
             "--lang",
-            choices=["en", "fr"],
+            choices=["en", "fr", "es"],
             default="en",
-            help="Select translation dictionary for output (en/fr).",
+            help="Select translation dictionary for output (en/fr/es).",
         )
 
         subparsers = parser.add_subparsers(dest="command", required=True)

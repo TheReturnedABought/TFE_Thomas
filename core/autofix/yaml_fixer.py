@@ -65,6 +65,22 @@ class YamlFixer:
                             vols[i] = f"{vol}:ro"
                             fixes_applied += 1
 
+            # New native rule support (e.g. DC-010 healthcheck, etc.) if requested natively...
+            if "DC-010" in rule_ids and "healthcheck" not in svc_config:
+                # Add default basic healthcheck
+                svc_config["healthcheck"] = {"test": ["CMD-SHELL", "curl -f http://localhost/ || exit 1"]}
+                fixes_applied += 1
+
+            # Dynamic Custom Autofix parsing
+            for issue in issues:
+                if issue.autofix and issue.autofix.get("supported"):
+                    if issue.autofix.get("strategy") == "set_key":
+                        target_key = issue.autofix.get("target")
+                        target_value = issue.autofix.get("replacement")
+                        if target_key and target_key not in svc_config:
+                            svc_config[target_key] = target_value
+                            fixes_applied += 1
+
         if fixes_applied > 0:
             with open(file_path, "w", encoding="utf-8") as f:
                 yaml.dump(data, f)

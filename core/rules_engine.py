@@ -256,7 +256,142 @@ def _swarm_privileged_mode(ctx: Dict[str, Any]) -> bool:
     return bool(ctx.get("privileged", False))
 
 
+# --- Additional Dockerfile checks (DF-010 to DF-019) -----------------------
+
+@_safe_check
+def _apt_get_no_cleanup(ctx: Dict[str, Any]) -> bool:
+    return bool(ctx.get("apt_get_missing_cleanup", False))
+
+@_safe_check
+def _apk_no_cache(ctx: Dict[str, Any]) -> bool:
+    return bool(ctx.get("apk_missing_no_cache", False))
+
+@_safe_check
+def _yum_no_clean(ctx: Dict[str, Any]) -> bool:
+    return bool(ctx.get("yum_missing_cleanup", False))
+
+@_safe_check
+def _curl_no_fsl(ctx: Dict[str, Any]) -> bool:
+    return bool(ctx.get("curl_missing_fsl", False))
+
+@_safe_check
+def _wget_no_qO(ctx: Dict[str, Any]) -> bool:
+    return bool(ctx.get("wget_missing_qO", False))
+
+@_safe_check
+def _sudo_in_run(ctx: Dict[str, Any]) -> bool:
+    return bool(ctx.get("sudo_in_run", False))
+
+@_safe_check
+def _missing_expose(ctx: Dict[str, Any]) -> bool:
+    return not ctx.get("has_expose", False)
+
+@_safe_check
+def _maintainer_used(ctx: Dict[str, Any]) -> bool:
+    return bool(ctx.get("maintainer_used", False))
+
+@_safe_check
+def _cd_instead_of_workdir(ctx: Dict[str, Any]) -> bool:
+    return bool(ctx.get("cd_used_in_run", False))
+
+@_safe_check
+def _npm_no_cache_clean(ctx: Dict[str, Any]) -> bool:
+    return bool(ctx.get("npm_missing_cleanup", False))
+
+# --- Additional Compose checks (DC-008 to DC-017) -------------------------
+
+@_safe_check
+def _compose_missing_restart(ctx: Dict[str, Any]) -> bool:
+    return not ctx.get("has_restart", False)
+
+@_safe_check
+def _compose_missing_healthcheck(ctx: Dict[str, Any]) -> bool:
+    return not ctx.get("has_healthcheck", False)
+
+@_safe_check
+def _compose_network_mode_host(ctx: Dict[str, Any]) -> bool:
+    return ctx.get("network_mode", "") == "host"
+
+@_safe_check
+def _compose_pid_host(ctx: Dict[str, Any]) -> bool:
+    return ctx.get("pid_mode", "") == "host"
+
+@_safe_check
+def _compose_missing_limits(ctx: Dict[str, Any]) -> bool:
+    return not ctx.get("has_resource_limits", False)
+
+@_safe_check
+def _compose_hardcoded_container_name(ctx: Dict[str, Any]) -> bool:
+    return bool(ctx.get("has_container_name", False))
+
+@_safe_check
+def _compose_dangerous_caps(ctx: Dict[str, Any]) -> bool:
+    return bool(ctx.get("has_dangerous_caps", False))
+
+@_safe_check
+def _compose_ipc_host(ctx: Dict[str, Any]) -> bool:
+    return ctx.get("ipc_mode", "") == "host"
+
+@_safe_check
+def _compose_hardcoded_mac(ctx: Dict[str, Any]) -> bool:
+    return bool(ctx.get("has_mac_address", False))
+
+@_safe_check
+def _compose_hardcoded_dns(ctx: Dict[str, Any]) -> bool:
+    return bool(ctx.get("has_dns", False))
+
+# --- Additional Swarm checks (SW-013 to SW-017) ---------------------------
+
+@_safe_check
+def _swarm_missing_stop_grace_period(ctx: Dict[str, Any]) -> bool:
+    return not ctx.get("has_stop_grace_period", False)
+
+@_safe_check
+def _swarm_endpoint_mode_dnsrr(ctx: Dict[str, Any]) -> bool:
+    return ctx.get("endpoint_mode", "") == "dnsrr"
+
+@_safe_check
+def _swarm_update_order_stop_first(ctx: Dict[str, Any]) -> bool:
+    return ctx.get("update_order", "stop-first") == "stop-first"
+
+@_safe_check
+def _swarm_restart_delay_short(ctx: Dict[str, Any]) -> bool:
+    return bool(ctx.get("restart_delay_missing_or_short", False))
+
+@_safe_check
+def _swarm_volume_missing_type(ctx: Dict[str, Any]) -> bool:
+    return bool(ctx.get("volume_missing_type", False))
+
+# --- Additional Image checks (IMG-006 to IMG-010) -------------------------
+
+@_safe_check
+def _image_excessive_size(ctx: Dict[str, Any]) -> bool:
+    # Checked against size in MB -> > 1024 MB is excessive
+    return ctx.get("size_mb", 0.0) > 1024.0
+
+@_safe_check
+def _image_missing_exposed_ports(ctx: Dict[str, Any]) -> bool:
+    return not ctx.get("has_exposed_ports", False)
+
+@_safe_check
+def _image_scratch_root(ctx: Dict[str, Any]) -> bool:
+    return bool(ctx.get("is_scratch_root", False))
+
+@_safe_check
+def _image_unversioned_tags(ctx: Dict[str, Any]) -> bool:
+    tags = ctx.get("tags", [])
+    for tag in tags:
+        if ":latest" in str(tag).lower():
+            return True
+    return False
+
+@_safe_check
+def _image_missing_cmd_entrypoint(ctx: Dict[str, Any]) -> bool:
+    return not ctx.get("has_cmd_or_entrypoint", False)
+
+
 # ---------------------------------------------------------------------------
+
 # Registry: check name → evaluator function
 # ---------------------------------------------------------------------------
 
@@ -295,6 +430,37 @@ _CHECK_REGISTRY: Dict[str, CheckFn] = {
     "swarm_no_healthcheck": _swarm_no_healthcheck,
     "swarm_no_logging": _swarm_no_logging,
     "swarm_privileged_mode": _swarm_privileged_mode,
+    # Additional rules assignments
+    "apt_get_no_cleanup": _apt_get_no_cleanup,
+    "apk_no_cache": _apk_no_cache,
+    "yum_no_clean": _yum_no_clean,
+    "curl_no_fsl": _curl_no_fsl,
+    "wget_no_qO": _wget_no_qO,
+    "sudo_in_run": _sudo_in_run,
+    "missing_expose": _missing_expose,
+    "maintainer_used": _maintainer_used,
+    "cd_instead_of_workdir": _cd_instead_of_workdir,
+    "npm_no_cache_clean": _npm_no_cache_clean,
+    "compose_missing_restart": _compose_missing_restart,
+    "compose_missing_healthcheck": _compose_missing_healthcheck,
+    "compose_network_mode_host": _compose_network_mode_host,
+    "compose_pid_host": _compose_pid_host,
+    "compose_missing_limits": _compose_missing_limits,
+    "compose_hardcoded_container_name": _compose_hardcoded_container_name,
+    "compose_dangerous_caps": _compose_dangerous_caps,
+    "compose_ipc_host": _compose_ipc_host,
+    "compose_hardcoded_mac": _compose_hardcoded_mac,
+    "compose_hardcoded_dns": _compose_hardcoded_dns,
+    "swarm_missing_stop_grace_period": _swarm_missing_stop_grace_period,
+    "swarm_endpoint_mode_dnsrr": _swarm_endpoint_mode_dnsrr,
+    "swarm_update_order_stop_first": _swarm_update_order_stop_first,
+    "swarm_restart_delay_short": _swarm_restart_delay_short,
+    "swarm_volume_missing_type": _swarm_volume_missing_type,
+    "image_excessive_size": _image_excessive_size,
+    "image_missing_exposed_ports": _image_missing_exposed_ports,
+    "image_scratch_root": _image_scratch_root,
+    "image_unversioned_tags": _image_unversioned_tags,
+    "image_missing_cmd_entrypoint": _image_missing_cmd_entrypoint,
 }
 
 
@@ -375,6 +541,7 @@ class RulesEngine:
                         "component", rule.get("component", "unknown")
                     ),
                     recommendation=rule["recommendation"],
+                    autofix=rule.get("autofix")
                 )
             ]
         return []
