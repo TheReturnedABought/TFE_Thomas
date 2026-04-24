@@ -58,7 +58,7 @@ This project was built to demonstrate professional Python software engineering p
 - **CI/CD AutoFix Engine (`--fix`)** — Implements an automated remediation layer replacing vulnerable AST structures with safe nodes natively without stripping configuration layouts.
 - **SARIF Code Scanning Export** — Generates `dockcheck_report.sarif` mapping securely onto OASIS v2.1.0 specifications for immediate ingestion into **GitHub Advanced Security** and **GitLab SAST** dashboards.
 - **Compiler Level Parse Integrity** — Implements pure-state-machine Dockerfile AST generation guaranteeing 100% resilience against multiline syntax formatting failures structurally tested against 10,000 bounds of fuzzed hypothesis noise limiters.
-- **i18n Localization (`--lang fr`)** — Complete decoupling of english strings scaling natively to generalized i18n JSON locales (supports native French out of the box).
+- **i18n Localization (`--lang fr`)** — Complete decoupling of english strings scaling natively to generalized i18n JSON locales (supports native French and Spanish out of the box).
 - **Exit codes** — returns `0` (no issues) or `1` (issues found) for pipeline integration.
 - **Custom rules** — supports a custom `rules.json` file via `--rules`.
 
@@ -147,7 +147,7 @@ python main.py all \
 | `--output`, `-o` | `dockcheck_report.html` | Path for the HTML report |
 | `--sarif-output` | `dockcheck_report.sarif` | Generates a SARIF file alongside HTML for CI/CD SAST dashboard aggregation |
 | `--fix` | false | Automatically mitigates simple static issues natively. For complex issues, outputs a warning explicitly flagged for manual engineering review. |
-| `--lang` | `en` | Overrides reporting strings localization (supports `en`, `fr`) |
+| `--lang` | `en` | Overrides reporting strings localization (supports `en`, `fr`, 'es') |
 | `--severity`, `-s` | `low` | Minimum severity to report (`low`, `medium`, `critical`) |
 | `--no-report` | false | Skip HTML generation, print summary only |
 | `--rules` | built-in | Path to a custom rules JSON file |
