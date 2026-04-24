@@ -39,6 +39,8 @@ def _make_mock_docker_image(metadata: dict) -> MagicMock:
             "Labels": metadata["labels"],
             "Env": metadata["env_vars"],
             "User": metadata.get("user", ""),
+            "ExposedPorts": metadata.get("exposed_ports", {}),
+            "Cmd": metadata.get("cmd", []),
         },
         "Os": metadata["os"],
         "Architecture": metadata["architecture"],

@@ -74,6 +74,9 @@ class DockerImageAnalyzer:
             "tags": self._image.tags,
             "architecture": attrs.get("Architecture", ""),
             "os": attrs.get("Os", ""),
+            "has_exposed_ports": bool(config.get("ExposedPorts")),
+            "is_scratch_root": not bool(config.get("Image", "")) and not bool(config.get("User")),
+            "has_cmd_or_entrypoint": bool(config.get("Cmd")) or bool(config.get("Entrypoint")),
         }
 
     # ------------------------------------------------------------------
@@ -104,4 +107,9 @@ class DockerImageAnalyzer:
             "labels": metadata.get("labels", {}),
             "env_vars": metadata.get("env_vars", []),
             "num_layers": metadata.get("num_layers", 0),
+            "size_mb": metadata.get("size_mb", 0.0),
+            "has_exposed_ports": metadata.get("has_exposed_ports", False),
+            "is_scratch_root": metadata.get("is_scratch_root", False),
+            "tags": metadata.get("tags", []),
+            "has_cmd_or_entrypoint": metadata.get("has_cmd_or_entrypoint", False),
         }

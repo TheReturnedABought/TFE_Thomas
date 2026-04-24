@@ -1,5 +1,14 @@
 FROM node:18-alpine
-RUN apk add --no-cache curl
+# Edge cases: commands formatted weirdly but they DO contain the flags.
+# They should NOT trigger issues.
+RUN apk add --no-cache curl \
+    && echo "installed"
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends wget \
+    && rm -rf /var/lib/apt/lists/*
+RUN curl -fsSL http://example.com/foo
+RUN wget -qO- http://example.com/foo
 COPY . .
+EXPOSE 8080
 USER node
 CMD ["node", "index.js"]

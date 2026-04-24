@@ -46,7 +46,7 @@ class Test_Analyzer__run_dockerfile:
         """Test run dockerfile success."""
         f = tmp_path / "DF"
         # Use a more complete Dockerfile to minimize default issues
-        f.write_text("FROM alpine:3.18\nHEALTHCHECK NONE\nUSER 1000\nWORKDIR /app")
+        f.write_text("FROM alpine:3.18\nHEALTHCHECK NONE\nUSER 1000\nWORKDIR /app\nEXPOSE 8080")
         config = Config({"command": "dockerfile", "dockerfile_path": str(f)})
         analyzer = Analyzer(config)
         result = analyzer._run_dockerfile()

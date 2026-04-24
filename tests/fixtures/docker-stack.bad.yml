@@ -7,7 +7,14 @@ services:
       DB_PASSWORD: supersecret
     deploy:
       mode: replicated
+      endpoint_mode: dnsrr
+      update_config:
+        order: stop-first
+      restart_policy:
+        delay: 0s
     privileged: true
+    volumes:
+      - /host/path:/container/path
   
   worker:
     image: myworker

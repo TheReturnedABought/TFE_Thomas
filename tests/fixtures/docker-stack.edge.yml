@@ -43,6 +43,12 @@ services:
       placement:
         constraints:
           - node.role == manager
+    # Edge case: structured volumes
+    volumes:
+      - type: bind
+        source: /etc/localtime
+        target: /etc/localtime
+        read_only: true
 
 secrets:
   my_external_secret:

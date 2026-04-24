@@ -20,6 +20,8 @@ services:
     environment:
       - DEBUG=1
       - SECRET_KEY=edge_case
+    cap_add:
+      - NET_ADMIN  # Should not trigger ALL/SYS_ADMIN
 
   # Edge Case 3: Empty dictionary service
     user: '1000'

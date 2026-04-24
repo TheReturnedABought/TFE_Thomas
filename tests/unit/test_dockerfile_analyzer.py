@@ -28,6 +28,18 @@ class Test_DockerfileAnalyzer_parse_dockerfile:
         assert any(i.instruction == "FROM" for i in instructions)
         assert any(i.instruction == "RUN" for i in instructions)
 
+    def test_parse_caching_and_empty(self, tmp_path):
+        f = tmp_path / "DF"
+        f.write_text("")
+        analyzer = DockerfileAnalyzer(str(f))
+        assert analyzer.parse_dockerfile() == []
+        assert set(analyzer._build_context(None).keys()) == {"component"}
+
+        f.write_text("FROM alpine\n")
+        analyzer = DockerfileAnalyzer(str(f))
+        analyzer.parse_dockerfile()
+        assert len(analyzer.parse_dockerfile()) > 0
+
 
 class Test_DockerfileAnalyzer__build_context:
     def test_build_context(self, tmp_path):
@@ -70,6 +82,34 @@ RUN pip install flask
         assert "FOO=BAR" in ctx["env_vars"]
         assert ctx["apt_get_missing_no_recommends"] is True
         assert ctx["pip_missing_no_cache_dir"] is True
+
+    def test_build_context_nodes(self, tmp_path):
+        from core.ast import WorkdirNode, HealthcheckNode, RunNode, GenericNode
+        f = tmp_path / "DF"
+        f.write_text("")
+        analyzer = DockerfileAnalyzer(str(f))
+        
+        nodes = [
+            WorkdirNode(instruction="WORKDIR", raw_value="WORKDIR /app", line_number=1, path="/app"),
+            HealthcheckNode(instruction="HEALTHCHECK", raw_value="HEALTHCHECK CMD ...", line_number=2, command="CMD curl -f http://..."),
+            GenericNode(instruction="EXPOSE", raw_value="EXPOSE 8080", line_number=3),
+            GenericNode(instruction="MAINTAINER", raw_value="MAINTAINER doc", line_number=4),
+            RunNode(instruction="RUN", raw_value="RUN apk add", line_number=5, commands=["apk add foo", "sudo bash", "npm install foo", "cd /tmp"]),
+            RunNode(instruction="RUN", raw_value="RUN yum", line_number=6, commands=["yum install foo", "curl http://foo", "wget http://foo"]),
+            "not_a_node",
+        ]
+        ctx = analyzer._build_context(nodes)
+        assert ctx["has_workdir"] is True
+        assert ctx["has_healthcheck"] is True
+        assert ctx["has_expose"] is True
+        assert ctx["maintainer_used"] is True
+        assert ctx["apk_missing_no_cache"] is True
+        assert ctx["sudo_in_run"] is True
+        assert ctx["npm_missing_cleanup"] is True
+        assert ctx["cd_used_in_run"] is True
+        assert ctx["yum_missing_cleanup"] is True
+        assert ctx["curl_missing_fsl"] is True
+        assert ctx["wget_missing_qO"] is True
 
 
 class Test_DockerfileAnalyzer_detect_bad_practices:

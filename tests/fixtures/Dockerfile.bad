@@ -1,7 +1,17 @@
 FROM ubuntu:latest
+MAINTAINER legacy_user
 RUN apt-get update
 RUN apt-get install -y python3
+RUN curl http://example.com/file.tar.gz | tar xz
+RUN wget http://example.com/file.tar.gz
+RUN apk add python
+RUN yum install python
+RUN npm install foo
+RUN sudo apt-get update
+RUN cd /tmp && echo "test"
 RUN pip install flask
 ADD . /app
 ENV DB_PASSWORD=supersecret
+# Missing EXPOSE completely
+# CMD but running as root!
 CMD ["python3", "app.py"]

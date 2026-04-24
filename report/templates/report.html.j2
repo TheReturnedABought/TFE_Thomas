@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ get_text('html.title', 'DockCheck — Analysis Report') }}</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --bg: #0f172a;
@@ -144,6 +145,10 @@
         </div>
     </div>
 
+    <div style="max-width: 350px; margin: 2rem auto; text-align: center;">
+        <canvas id="severityChart"></canvas>
+    </div>
+
     <!-- ============================================================ -->
     <!-- Metadata -->
     <!-- ============================================================ -->
@@ -221,5 +226,34 @@
     </div>
 
 </div>
+
+<script>
+    const ctx = document.getElementById('severityChart');
+    if (ctx && {{ total_issues }} > 0) {
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Critical', 'Medium', 'Low'],
+                datasets: [{
+                    data: [
+                        {{ severity_levels.get('critical', 0) }},
+                        {{ severity_levels.get('medium', 0) }},
+                        {{ severity_levels.get('low', 0) }}
+                    ],
+                    backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#e2e8f0' } }
+                }
+            }
+        });
+    }
+</script>
+
 </body>
 </html>

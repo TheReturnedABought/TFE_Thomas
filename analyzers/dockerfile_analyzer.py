@@ -120,6 +120,16 @@ class DockerfileAnalyzer:
             "pip_missing_no_cache_dir": False,
             "env_vars": [],
             "user_is_explicit": False,
+            "apt_get_missing_cleanup": False,
+            "apk_missing_no_cache": False,
+            "yum_missing_cleanup": False,
+            "curl_missing_fsl": False,
+            "wget_missing_qO": False,
+            "sudo_in_run": False,
+            "has_expose": False,
+            "maintainer_used": False,
+            "cd_used_in_run": False,
+            "npm_missing_cleanup": False,
         }
 
         has_apt_update = False
@@ -154,23 +164,48 @@ class DockerfileAnalyzer:
 
             elif isinstance(node, RunNode):
                 run_count += 1
+                full_run_val = " ".join(node.commands).lower()
+                
+                if "apt-get update" in full_run_val and "apt-get install" not in full_run_val:
+                    has_apt_update = True
+                if "apt-get install" in full_run_val and "apt-get update" not in full_run_val:
+                    has_apt_install = True
+
+                # DF-008: apt-get install without --no-install-recommends
+                if "apt-get install" in full_run_val and "--no-install-recommends" not in full_run_val:
+                    context["apt_get_missing_no_recommends"] = True
+
+                # DF-009: pip install without --no-cache-dir
+                if "pip install" in full_run_val and "--no-cache-dir" not in full_run_val:
+                    context["pip_missing_no_cache_dir"] = True
+                    
+                # Evaluate rules that should be checked per individual command
                 for cmd in node.commands:
                     val = cmd.lower()
-                    if "apt-get update" in val and "apt-get install" not in val:
-                        has_apt_update = True
-                    if "apt-get install" in val and "apt-get update" not in val:
-                        has_apt_install = True
+                    if val.strip().startswith("curl ") and not any(f in val for f in ["-f", "--fail"]):
+                        context["curl_missing_fsl"] = True
+                    if val.strip().startswith("wget ") and not any(f in val for f in ["-qo-", "-q -o -"]):
+                        context["wget_missing_qO"] = True
+                    if "sudo" in val.split():
+                        context["sudo_in_run"] = True
+                    if val.strip().startswith("cd "):
+                        context["cd_used_in_run"] = True
 
-                    # DF-008: apt-get install without --no-install-recommends
-                    if (
-                        "apt-get install" in val
-                        and "--no-install-recommends" not in val
-                    ):
-                        context["apt_get_missing_no_recommends"] = True
-
-                    # DF-009: pip install without --no-cache-dir
-                    if "pip install" in val and "--no-cache-dir" not in val:
-                        context["pip_missing_no_cache_dir"] = True
+                # Evaluate rules that span the full RUN structure like apt-get chaining
+                if "apt-get install" in full_run_val and "rm -rf /var/lib/apt/lists" not in full_run_val:
+                    context["apt_get_missing_cleanup"] = True
+                if "apk add" in full_run_val and "--no-cache" not in full_run_val:
+                    context["apk_missing_no_cache"] = True
+                if "yum install" in full_run_val and "yum clean all" not in full_run_val:
+                    context["yum_missing_cleanup"] = True
+                if "npm install" in full_run_val and "npm cache clean" not in full_run_val:
+                    context["npm_missing_cleanup"] = True
+                    
+            elif type(node).__name__ == "GenericNode":
+                if node.instruction == "EXPOSE":
+                    context["has_expose"] = True
+                elif node.instruction == "MAINTAINER":
+                    context["maintainer_used"] = True
 
         context["multiple_run"] = run_count > 2
         context["apt_get_split"] = has_apt_update and has_apt_install

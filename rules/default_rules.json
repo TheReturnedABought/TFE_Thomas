@@ -263,6 +263,246 @@
       "severity": "critical",
       "check": "swarm_privileged_mode",
       "recommendation": "Remove 'privileged: true' and use the minimum required capabilities via 'cap_add'. Privileged containers bypass all security isolation. Source: IBM Best Practices for Docker Security."
+    },
+    {
+      "id": "DF-010",
+      "component": "dockerfile",
+      "description": "apt-get install used without footprint cleanup",
+      "severity": "low",
+      "check": "apt_get_no_cleanup",
+      "recommendation": "Add 'rm -rf /var/lib/apt/lists/*' after 'apt-get install' to reduce image tracking bloat."
+    },
+    {
+      "id": "DF-011",
+      "component": "dockerfile",
+      "description": "apk add used without --no-cache",
+      "severity": "low",
+      "check": "apk_no_cache",
+      "recommendation": "Use 'apk add --no-cache' instead of maintaining apk caches."
+    },
+    {
+      "id": "DF-012",
+      "component": "dockerfile",
+      "description": "yum install used without repository cleanup",
+      "severity": "low",
+      "check": "yum_no_clean",
+      "recommendation": "Add 'yum clean all' after 'yum install' to purge fetched package caches."
+    },
+    {
+      "id": "DF-013",
+      "component": "dockerfile",
+      "description": "curl used without silent-fail flags (-fSL)",
+      "severity": "medium",
+      "check": "curl_no_fsl",
+      "recommendation": "Use 'curl -fSL' to ensure Docker builds fail fast if the remote asset returns HTTP errors."
+    },
+    {
+      "id": "DF-014",
+      "component": "dockerfile",
+      "description": "wget used without quiet-output stream bindings",
+      "severity": "low",
+      "check": "wget_no_qO",
+      "recommendation": "Use 'wget -qO-' to streamline binary streaming securely in build contexts."
+    },
+    {
+      "id": "DF-015",
+      "component": "dockerfile",
+      "description": "sudo executed during Docker build",
+      "severity": "critical",
+      "check": "sudo_in_run",
+      "recommendation": "Do not use 'sudo' in Dockerfiles. Explicitly switch users via the 'USER' command."
+    },
+    {
+      "id": "DF-016",
+      "component": "dockerfile",
+      "description": "No EXPOSE network port mappings declared",
+      "severity": "low",
+      "check": "missing_expose",
+      "recommendation": "Explicitly define 'EXPOSE <port>' to improve port discovery and document container intent."
+    },
+    {
+      "id": "DF-017",
+      "component": "dockerfile",
+      "description": "Use of deprecated MAINTAINER tag",
+      "severity": "low",
+      "check": "maintainer_used",
+      "recommendation": "Replace legacy 'MAINTAINER' directives with standardized 'LABEL author=' format."
+    },
+    {
+      "id": "DF-018",
+      "component": "dockerfile",
+      "description": "Inline path traversals (cd) rather than deterministic WORKDIR",
+      "severity": "medium",
+      "check": "cd_instead_of_workdir",
+      "recommendation": "Use explicit 'WORKDIR /path' statements instead of calling 'cd' to maintain execution determinism."
+    },
+    {
+      "id": "DF-019",
+      "component": "dockerfile",
+      "description": "npm install used without clearing node caching",
+      "severity": "low",
+      "check": "npm_no_cache_clean",
+      "recommendation": "Execute 'npm cache clean --force' after 'npm install' to destroy temporary JavaScript dependency layers."
+    },
+    {
+      "id": "DC-008",
+      "component": "compose",
+      "description": "Service missing declarative restart parameter",
+      "severity": "medium",
+      "check": "compose_missing_restart",
+      "recommendation": "Define a static 'restart' recovery policy (e.g., 'unless-stopped')."
+    },
+    {
+      "id": "DC-009",
+      "component": "compose",
+      "description": "Service missing a localized healthcheck configuration",
+      "severity": "medium",
+      "check": "compose_missing_healthcheck",
+      "recommendation": "Define healthchecks directly in Compose or enforce them at the Image level."
+    },
+    {
+      "id": "DC-010",
+      "component": "compose",
+      "description": "Service assigns container to host network mode",
+      "severity": "critical",
+      "check": "compose_network_mode_host",
+      "recommendation": "Avoid 'network_mode: host'. Use mapped ports to preserve software-defined-network isolation."
+    },
+    {
+      "id": "DC-011",
+      "component": "compose",
+      "description": "Service breaks PID namespace via host mapping",
+      "severity": "critical",
+      "check": "compose_pid_host",
+      "recommendation": "Remove 'pid: host'. Sharing the host process ID space allows container root escalation easily."
+    },
+    {
+      "id": "DC-012",
+      "component": "compose",
+      "description": "Service ignores structured resource memory/CPU limitations",
+      "severity": "critical",
+      "check": "compose_missing_limits",
+      "recommendation": "Dictate execution footprints through 'deploy.resources.limits' to avoid node locking failures."
+    },
+    {
+      "id": "DC-013",
+      "component": "compose",
+      "description": "Explicit container_name configuration injected",
+      "severity": "medium",
+      "check": "compose_hardcoded_container_name",
+      "recommendation": "Remove 'container_name'. Forced nomenclature prevents horizontal scaling and replicas generation."
+    },
+    {
+      "id": "DC-014",
+      "component": "compose",
+      "description": "SYS_ADMIN or ALL capability escalation granted",
+      "severity": "critical",
+      "check": "compose_dangerous_caps",
+      "recommendation": "Do not grant root-equivalent system capabilities such as 'SYS_ADMIN' globally via 'cap_add'."
+    },
+    {
+      "id": "DC-015",
+      "component": "compose",
+      "description": "Inter-Process Communication attached directly to Host",
+      "severity": "critical",
+      "check": "compose_ipc_host",
+      "recommendation": "Avoid 'ipc: host' to ensure memory segment namespaces remain sealed against the hosting system."
+    },
+    {
+      "id": "DC-016",
+      "component": "compose",
+      "description": "Fixed deployment bounded by hardcoded MAC identifiers",
+      "severity": "low",
+      "check": "compose_hardcoded_mac",
+      "recommendation": "Avoid pinning strict 'mac_address' configurations as it impedes scheduling fluidity globally."
+    },
+    {
+      "id": "DC-017",
+      "component": "compose",
+      "description": "DNS queries strictly overridden skipping internal resolvers",
+      "severity": "low",
+      "check": "compose_hardcoded_dns",
+      "recommendation": "Refrain from hardcoding public DNS references (like 8.8.8.8) to maintain resolution independence."
+    },
+    {
+      "id": "SW-013",
+      "component": "swarm",
+      "description": "Service stop_grace_period configuration is absent",
+      "severity": "medium",
+      "check": "swarm_missing_stop_grace_period",
+      "recommendation": "Implement 'stop_grace_period' dictations to perform safe termination signaling in clustered tears."
+    },
+    {
+      "id": "SW-014",
+      "component": "swarm",
+      "description": "Swarm routing mesh bypassed using internal dnsrr mode",
+      "severity": "medium",
+      "check": "swarm_endpoint_mode_dnsrr",
+      "recommendation": "Use 'vip' (Virtual IP) mode instead of 'dnsrr' to retain layer-4 load-balancing topologies."
+    },
+    {
+      "id": "SW-015",
+      "component": "swarm",
+      "description": "Update ordering follows default stop-first pipeline causing down-time",
+      "severity": "medium",
+      "check": "swarm_update_order_stop_first",
+      "recommendation": "Configure 'update_config.order' as 'start-first' for automated Zero-Downtime rollouts."
+    },
+    {
+      "id": "SW-016",
+      "component": "swarm",
+      "description": "Restart temporal delays unbounded or suspiciously brief",
+      "severity": "medium",
+      "check": "swarm_restart_delay_short",
+      "recommendation": "Include a minimum temporal 'delay' variable representing execution recovery to avoid failure loop spinbacks."
+    },
+    {
+      "id": "SW-017",
+      "component": "swarm",
+      "description": "Swarm deployment volume omits constraint isolation typing",
+      "severity": "low",
+      "check": "swarm_volume_missing_type",
+      "recommendation": "Use explicit volume structures ('type: volume|bind') when deploying storage to clusters."
+    },
+    {
+      "id": "IMG-006",
+      "component": "image",
+      "description": "Total image payload significantly exceeds 1GB limit",
+      "severity": "medium",
+      "check": "image_excessive_size",
+      "recommendation": "Use multi-stage builds alongside minimal architectural footprints targeting sub-500MB sizing constructs."
+    },
+    {
+      "id": "IMG-007",
+      "component": "image",
+      "description": "Virtual network mappings lack ExposedPorts structure definitions",
+      "severity": "low",
+      "check": "image_missing_exposed_ports",
+      "recommendation": "Images intending to route traffic must embed explicit EXPOSE boundaries in their configuration schemas."
+    },
+    {
+      "id": "IMG-008",
+      "component": "image",
+      "description": "Scratch infrastructure defaults silently back to unregulated ROOT mappings",
+      "severity": "critical",
+      "check": "image_scratch_root",
+      "recommendation": "Even scratch deployments executing native go-binaries require constrained isolated UID mapping identities injected post-build."
+    },
+    {
+      "id": "IMG-009",
+      "component": "image",
+      "description": "Production configurations rely implicitly upon 'latest' tag allocations",
+      "severity": "medium",
+      "check": "image_unversioned_tags",
+      "recommendation": "Immutable images must omit the 'latest' string mapping internally to preserve determinism validation logic."
+    },
+    {
+      "id": "IMG-010",
+      "component": "image",
+      "description": "Constructed object artifacts miss active daemon process triggers (CMD/ENTRYPOINT)",
+      "severity": "medium",
+      "check": "image_missing_cmd_entrypoint",
+      "recommendation": "Ensure an explicit execution directive dictates parameter parsing behaviors using static ENTRYPOINT formats."
     }
   ]
 }

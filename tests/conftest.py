@@ -100,9 +100,15 @@ def compose_good():
         "    ports:\n"
         "      - '8080:80'\n"
         "    user: '1000'\n"
+        "    restart: unless-stopped\n"
+        "    healthcheck:\n"
+        "      test: ['CMD', 'curl', '-f', 'http://localhost']\n"
         "  db:\n"
         "    image: postgres:15\n"
         "    user: '999'\n"
+        "    restart: always\n"
+        "    healthcheck:\n"
+        "      test: ['CMD', 'pg_isready']\n"
         "    environment:\n"
         "      POSTGRES_PASSWORD_FILE: /run/secrets/db_password\n"
     )
@@ -190,10 +196,12 @@ def swarm_good():
         "      update_config:\n"
         "        parallelism: 1\n"
         "        delay: 10s\n"
+        "        order: start-first\n"
         "    secrets:\n"
         "      - db_password\n"
         "    networks:\n"
         "      - frontend\n"
+        "    stop_grace_period: 30s\n"
         "    healthcheck:\n"
         "      test: ['CMD', 'curl', '-f', 'http://localhost']\n"
         "      interval: 30s\n"
@@ -275,6 +283,8 @@ def mock_image_metadata():
         "user": "appuser",
         "architecture": "amd64",
         "os": "linux",
+        "cmd": ["bash"],
+        "exposed_ports": {"8080/tcp": {}},
     }
 
 
