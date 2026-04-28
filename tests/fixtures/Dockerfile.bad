@@ -1,17 +1,26 @@
-FROM ubuntu:latest
+FROM ubuntu:latest AS builder
+FROM alpine:latest AS builder
 MAINTAINER legacy_user
-RUN apt-get update
-RUN apt-get install -y python3
-RUN curl http://example.com/file.tar.gz | tar xz
-RUN wget http://example.com/file.tar.gz
-RUN apk add python
-RUN yum install python
-RUN npm install foo
-RUN sudo apt-get update
-RUN cd /tmp && echo "test"
-RUN pip install flask
-ADD . /app
+
+WORKDIR relative/path
+ADD http://example.com/file.tar.gz /app/
+
 ENV DB_PASSWORD=supersecret
-# Missing EXPOSE completely
-# CMD but running as root!
+ENV AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+
+RUN apt install python
+RUN npm install foo
+RUN gem install bar
+RUN yum install baz
+RUN zypper install qux
+RUN dnf install quux
+RUN cd /tmp && echo "test"
+
+COPY file1 file2 /dest
+COPY --from=nonexistent_stage /app /app
+
+EXPOSE 999999
+HEALTHCHECK CMD curl -f http://localhost/ || exit 1
+HEALTHCHECK CMD curl -f http://localhost/api || exit 1
+
 CMD ["python3", "app.py"]

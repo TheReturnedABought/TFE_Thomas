@@ -41,9 +41,11 @@ def _make_mock_docker_image(metadata: dict) -> MagicMock:
             "User": metadata.get("user", ""),
             "ExposedPorts": metadata.get("exposed_ports", {}),
             "Cmd": metadata.get("cmd", []),
+            "Healthcheck": metadata.get("healthcheck", {}),
         },
         "Os": metadata["os"],
         "Architecture": metadata["architecture"],
+        "DockerVersion": metadata.get("docker_version", ""),
     }
     return mock_image
 
@@ -306,7 +308,7 @@ class TestCleanImage:
         """Test issues have valid severity."""
         analyzer = make_image_analyzer(mock_image_metadata_bad)
         issues = analyzer.detect_bad_practices()
-        valid = {"low", "medium", "critical"}
+        valid = {"low", "medium", "high", "critical"}
         for issue in issues:
             assert issue.severity in valid
 

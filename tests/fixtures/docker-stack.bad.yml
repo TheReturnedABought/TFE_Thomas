@@ -1,25 +1,22 @@
-version: "3.8"
+version: '3.8'
 services:
   web:
-    image: nginx:latest
-    environment:
-      API_KEY: abc123
-      DB_PASSWORD: supersecret
-    deploy:
-      mode: replicated
-      endpoint_mode: dnsrr
-      update_config:
-        order: stop-first
-      restart_policy:
-        delay: 0s
+    image: my-web:latest
     privileged: true
-    volumes:
-      - /host/path:/container/path
-  
-  worker:
-    image: myworker
-    environment:
-      SECRET_TOKEN: tokenvalue
     ports:
-      - "0.0.0.0:22:22"
-    privileged: true
+      - "0.0.0.0:80:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM node:latest
+        WORKDIR relative/path
+        RUN npm install foo
+        EXPOSE 99999
+        HEALTHCHECK CMD curl -f http://localhost/ || exit 1
+        HEALTHCHECK CMD curl -f http://localhost/api || exit 1
+  db:
+    image: postgres:latest
+    environment:
+      - POSTGRES_PASSWORD=secret

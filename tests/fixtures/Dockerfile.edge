@@ -1,14 +1,10 @@
-FROM node:18-alpine
-# Edge cases: commands formatted weirdly but they DO contain the flags.
-# They should NOT trigger issues.
-RUN apk add --no-cache curl \
-    && echo "installed"
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends wget \
-    && rm -rf /var/lib/apt/lists/*
-RUN curl -fsSL http://example.com/foo
-RUN wget -qO- http://example.com/foo
-COPY . .
-EXPOSE 8080
-USER node
-CMD ["node", "index.js"]
+# This edge case has weird line continuations and quotes
+FROM ubuntu:22.04@sha256:1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef AS "builder"
+WORKDIR /opt/app/
+ENV APP_ENV="production"     APP_DEBUG='false'     SECRET=""
+COPY   --from="builder"   /src   /dest/
+RUN apt-get update &&     apt-get install -y --no-install-recommends       curl=7.81.0-1ubuntu1.16       wget=1.21.2-2ubuntu1 &&     rm -rf /var/lib/apt/lists/*
+USER 1000:1000
+EXPOSE 80/tcp 443/udp
+HEALTHCHECK NONE
+CMD ["/bin/sh", "-c", "echo 'starting'"]

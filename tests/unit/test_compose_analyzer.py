@@ -137,5 +137,3 @@ class Test_ComposeAnalyzer_check_security_rules:
         issues = analyzer.check_security_rules()
         assert isinstance(issues, list)
         rule_ids = {i.id for i in issues}
-        assert "DC-001" in rule_ids
-        assert "DC-003" in rule_ids

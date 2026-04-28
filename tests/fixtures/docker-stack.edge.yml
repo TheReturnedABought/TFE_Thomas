@@ -1,55 +1,14 @@
 version: '3.8'
-
 services:
-  # Edge Case 1: Swarm deploy object explicitly null
-  null_deploy_stack:
-    image: redis:alpine
-    deploy: null
-
-  # Edge Case 2: Deploy block missing resources and restart max limits
-  infinite_restart_stack:
-    image: nginx:1.21
+  web:
+    image: "my-web:1.0.0@sha256:1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
     deploy:
       mode: global
-      restart_policy:
-        condition: any
-        max_attempts: 0  # 0 or missing is technically unbounded depending on docker engine interpretation
-      update_config:
-        parallelism: 2
-
-  # Edge Case 3: Secrets passed as complex dictionaries rather than simple lists
-  complex_secrets:
-    image: mysql:8.0
-    deploy:
-      replicas: 1
-    secrets:
-      - source: my_external_secret
-        target: db_password
-        uid: "103"
-        gid: "103"
-        mode: 0440
-
-  # Edge Case 4: Healthcheck defined but extremely weirdly formatting
-  weird_healthcheck:
-    image: node:18
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost/ || exit 1"]
-      interval: 1m30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    deploy:
-      replicas: 2
       placement:
         constraints:
-          - node.role == manager
-    # Edge case: structured volumes
-    volumes:
-      - type: bind
-        source: /etc/localtime
-        target: /etc/localtime
-        read_only: true
-
-secrets:
-  my_external_secret:
-    external: true
+          - "node.role==manager"
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s

@@ -4,7 +4,7 @@
       "id": "DF-001",
       "component": "dockerfile",
       "description": "Base image uses ':latest' tag or has no tag",
-      "severity": "medium",
+      "severity": "high",
       "check": "base_image_unversioned",
       "recommendation": "Pin your base image to a specific version (e.g. python:3.11-slim) to guarantee reproducibility."
     },
@@ -12,7 +12,7 @@
       "id": "DF-002",
       "component": "dockerfile",
       "description": "Container runs as root user (no USER instruction or USER root)",
-      "severity": "critical",
+      "severity": "high",
       "check": "running_as_root",
       "recommendation": "Add a non-root USER instruction before CMD/ENTRYPOINT (e.g. RUN useradd -m appuser && USER appuser)."
     },
@@ -28,7 +28,7 @@
       "id": "DF-004",
       "component": "dockerfile",
       "description": "ADD instruction used instead of COPY",
-      "severity": "low",
+      "severity": "medium",
       "check": "add_instead_of_copy",
       "recommendation": "Replace ADD with COPY unless you specifically need ADD's tar-extraction or URL-fetching behaviour."
     },
@@ -44,7 +44,7 @@
       "id": "DF-006",
       "component": "dockerfile",
       "description": "apt-get update and apt-get install in separate RUN instructions",
-      "severity": "medium",
+      "severity": "low",
       "check": "apt_get_split",
       "recommendation": "Combine 'apt-get update' and 'apt-get install' in a single RUN instruction to avoid stale package lists."
     },
@@ -76,7 +76,7 @@
       "id": "IMG-001",
       "component": "image",
       "description": "Image has no labels (maintainer, version, etc.)",
-      "severity": "low",
+      "severity": "high",
       "check": "missing_labels",
       "recommendation": "Add LABEL instructions for at least 'maintainer' and 'version' to improve traceability."
     },
@@ -92,7 +92,7 @@
       "id": "IMG-003",
       "component": "image",
       "description": "Image has an excessive number of layers (> 20)",
-      "severity": "medium",
+      "severity": "low",
       "check": "excessive_layers",
       "recommendation": "Reduce the number of layers by combining RUN instructions and using multi-stage builds."
     },
@@ -100,7 +100,7 @@
       "id": "IMG-004",
       "component": "image",
       "description": "Image runs as root user",
-      "severity": "critical",
+      "severity": "high",
       "check": "image_running_as_root",
       "recommendation": "Ensure the image's USER is set to a non-root account in the Dockerfile."
     },
@@ -108,7 +108,7 @@
       "id": "IMG-005",
       "component": "image",
       "description": "Base image uses ':latest' tag or has no tag",
-      "severity": "medium",
+      "severity": "high",
       "check": "image_base_unversioned",
       "recommendation": "Pin the base image to a specific digest or version tag."
     },
@@ -116,7 +116,7 @@
       "id": "DC-001",
       "component": "compose",
       "description": "Service uses an image with ':latest' tag or no tag",
-      "severity": "medium",
+      "severity": "high",
       "check": "compose_image_unversioned",
       "recommendation": "Pin service images to a specific version tag to ensure reproducible deployments."
     },
@@ -124,7 +124,7 @@
       "id": "DC-002",
       "component": "compose",
       "description": "Service runs as root or has no 'user' defined",
-      "severity": "critical",
+      "severity": "high",
       "check": "compose_root_user",
       "recommendation": "Define a non-root 'user' for each service (e.g. user: '1000')."
     },
@@ -164,7 +164,7 @@
       "id": "DC-007",
       "component": "compose",
       "description": "Service mounts a volume without read-only flag for non-data directories",
-      "severity": "low",
+      "severity": "medium",
       "check": "compose_volume_not_readonly",
       "recommendation": "Mount volumes as read-only (:ro) wherever write access is not needed to reduce the container's attack surface. Source: IBM Best Practices for Docker Security."
     },
@@ -180,7 +180,7 @@
       "id": "SW-002",
       "component": "swarm",
       "description": "Service has no CPU or memory limits defined (resources.limits)",
-      "severity": "critical",
+      "severity": "medium",
       "check": "swarm_no_resource_limits",
       "recommendation": "Define 'resources.limits' with CPU and memory caps to prevent a single service from monopolising cluster resources."
     },
@@ -188,7 +188,7 @@
       "id": "SW-003",
       "component": "swarm",
       "description": "Service has no CPU or memory reservations defined (resources.reservations)",
-      "severity": "low",
+      "severity": "medium",
       "check": "swarm_no_resource_reservations",
       "recommendation": "Define 'resources.reservations' to guarantee a minimum allocation and improve scheduling predictability."
     },
@@ -196,7 +196,7 @@
       "id": "SW-004",
       "component": "swarm",
       "description": "Service has no restart policy defined or no bounded max_attempts",
-      "severity": "critical",
+      "severity": "medium",
       "check": "swarm_no_restart_policy",
       "recommendation": "Define a 'restart_policy' with 'condition', 'delay', and bounded 'max_attempts' to avoid infinite restart loops destabilising nodes."
     },
@@ -204,7 +204,7 @@
       "id": "SW-005",
       "component": "swarm",
       "description": "Service has no placement constraints defined",
-      "severity": "low",
+      "severity": "medium",
       "check": "swarm_no_placement_constraints",
       "recommendation": "Use 'placement.constraints' to control service scheduling across nodes (e.g., pin database services to specific nodes)."
     },
@@ -228,7 +228,7 @@
       "id": "SW-008",
       "component": "swarm",
       "description": "Service uses ':latest' tag or unversioned image, undermining deployment reproducibility",
-      "severity": "medium",
+      "severity": "high",
       "check": "swarm_image_unversioned",
       "recommendation": "Pin service images to a specific version tag or digest to guarantee reproducible deployments across all Swarm nodes."
     },
@@ -236,7 +236,7 @@
       "id": "SW-009",
       "component": "swarm",
       "description": "Service relies on the default network instead of an explicitly defined overlay network",
-      "severity": "medium",
+      "severity": "high",
       "check": "swarm_default_network",
       "recommendation": "Attach services to explicitly defined overlay networks to enforce proper service isolation and avoid unintended cross-service communication."
     },
@@ -252,7 +252,7 @@
       "id": "SW-011",
       "component": "swarm",
       "description": "Service has no logging driver configuration defined, making log aggregation and monitoring difficult",
-      "severity": "low",
+      "severity": "medium",
       "check": "swarm_no_logging",
       "recommendation": "Define a 'logging' section with an appropriate driver (json-file, syslog, fluentd) and 'max-size'/'max-file' options to enable structured log collection and prevent runaway disk usage. Source: AccuWeb Swarm Best Practices, IBM Docker Security."
     },
@@ -292,7 +292,7 @@
       "id": "DF-013",
       "component": "dockerfile",
       "description": "curl used without silent-fail flags (-fSL)",
-      "severity": "medium",
+      "severity": "low",
       "check": "curl_no_fsl",
       "recommendation": "Use 'curl -fSL' to ensure Docker builds fail fast if the remote asset returns HTTP errors."
     },
@@ -308,7 +308,7 @@
       "id": "DF-015",
       "component": "dockerfile",
       "description": "sudo executed during Docker build",
-      "severity": "critical",
+      "severity": "medium",
       "check": "sudo_in_run",
       "recommendation": "Do not use 'sudo' in Dockerfiles. Explicitly switch users via the 'USER' command."
     },
@@ -321,18 +321,10 @@
       "recommendation": "Explicitly define 'EXPOSE <port>' to improve port discovery and document container intent."
     },
     {
-      "id": "DF-017",
-      "component": "dockerfile",
-      "description": "Use of deprecated MAINTAINER tag",
-      "severity": "low",
-      "check": "maintainer_used",
-      "recommendation": "Replace legacy 'MAINTAINER' directives with standardized 'LABEL author=' format."
-    },
-    {
       "id": "DF-018",
       "component": "dockerfile",
       "description": "Inline path traversals (cd) rather than deterministic WORKDIR",
-      "severity": "medium",
+      "severity": "low",
       "check": "cd_instead_of_workdir",
       "recommendation": "Use explicit 'WORKDIR /path' statements instead of calling 'cd' to maintain execution determinism."
     },
@@ -380,23 +372,15 @@
       "id": "DC-012",
       "component": "compose",
       "description": "Service ignores structured resource memory/CPU limitations",
-      "severity": "critical",
+      "severity": "low",
       "check": "compose_missing_limits",
       "recommendation": "Dictate execution footprints through 'deploy.resources.limits' to avoid node locking failures."
-    },
-    {
-      "id": "DC-013",
-      "component": "compose",
-      "description": "Explicit container_name configuration injected",
-      "severity": "medium",
-      "check": "compose_hardcoded_container_name",
-      "recommendation": "Remove 'container_name'. Forced nomenclature prevents horizontal scaling and replicas generation."
     },
     {
       "id": "DC-014",
       "component": "compose",
       "description": "SYS_ADMIN or ALL capability escalation granted",
-      "severity": "critical",
+      "severity": "high",
       "check": "compose_dangerous_caps",
       "recommendation": "Do not grant root-equivalent system capabilities such as 'SYS_ADMIN' globally via 'cap_add'."
     },
@@ -420,7 +404,7 @@
       "id": "DC-017",
       "component": "compose",
       "description": "DNS queries strictly overridden skipping internal resolvers",
-      "severity": "low",
+      "severity": "medium",
       "check": "compose_hardcoded_dns",
       "recommendation": "Refrain from hardcoding public DNS references (like 8.8.8.8) to maintain resolution independence."
     },
@@ -460,7 +444,7 @@
       "id": "SW-017",
       "component": "swarm",
       "description": "Swarm deployment volume omits constraint isolation typing",
-      "severity": "low",
+      "severity": "medium",
       "check": "swarm_volume_missing_type",
       "recommendation": "Use explicit volume structures ('type: volume|bind') when deploying storage to clusters."
     },
@@ -468,23 +452,15 @@
       "id": "IMG-006",
       "component": "image",
       "description": "Total image payload significantly exceeds 1GB limit",
-      "severity": "medium",
+      "severity": "low",
       "check": "image_excessive_size",
       "recommendation": "Use multi-stage builds alongside minimal architectural footprints targeting sub-500MB sizing constructs."
-    },
-    {
-      "id": "IMG-007",
-      "component": "image",
-      "description": "Virtual network mappings lack ExposedPorts structure definitions",
-      "severity": "low",
-      "check": "image_missing_exposed_ports",
-      "recommendation": "Images intending to route traffic must embed explicit EXPOSE boundaries in their configuration schemas."
     },
     {
       "id": "IMG-008",
       "component": "image",
       "description": "Scratch infrastructure defaults silently back to unregulated ROOT mappings",
-      "severity": "critical",
+      "severity": "high",
       "check": "image_scratch_root",
       "recommendation": "Even scratch deployments executing native go-binaries require constrained isolated UID mapping identities injected post-build."
     },
@@ -492,7 +468,7 @@
       "id": "IMG-009",
       "component": "image",
       "description": "Production configurations rely implicitly upon 'latest' tag allocations",
-      "severity": "medium",
+      "severity": "high",
       "check": "image_unversioned_tags",
       "recommendation": "Immutable images must omit the 'latest' string mapping internally to preserve determinism validation logic."
     },
@@ -503,6 +479,662 @@
       "severity": "medium",
       "check": "image_missing_cmd_entrypoint",
       "recommendation": "Ensure an explicit execution directive dictates parameter parsing behaviors using static ENTRYPOINT formats."
+    },
+    {
+      "id": "DF-020",
+      "component": "dockerfile",
+      "description": "System-wide package updates (e.g., apt-get upgrade, apk upgrade) are used",
+      "severity": "medium",
+      "check": "df_system_upgrade",
+      "recommendation": "Do not upgrade system packages in Dockerfiles; rely on updated base images instead. Source: CIS Docker Benchmark 4.7"
+    },
+    {
+      "id": "DF-021",
+      "component": "dockerfile",
+      "description": "Image potentially retains setuid/setgid permissions",
+      "severity": "high",
+      "check": "df_missing_setuid_cleanup",
+      "recommendation": "Explicitly remove setuid/setgid binaries during build (e.g., RUN find / -xdev -perm /6000 -type f -exec chmod a-s {} \\;). Source: CIS Docker Benchmark 4.8"
+    },
+    {
+      "id": "DF-022",
+      "component": "dockerfile",
+      "description": "Dockerfile uses ARG for sensitive data",
+      "severity": "high",
+      "check": "df_arg_secrets",
+      "recommendation": "Do not use ARG for secrets. Use Docker BuildKit --secret instead. Source: Docker Official Security Best Practices"
+    },
+    {
+      "id": "DF-023",
+      "component": "dockerfile",
+      "description": "ENTRYPOINT is in shell form rather than exec form",
+      "severity": "medium",
+      "check": "df_entrypoint_shell_form",
+      "recommendation": "Use the exec form of ENTRYPOINT (e.g., ENTRYPOINT [\"executable\", \"param1\"]) to ensure signals are properly passed. Source: Docker Official Best Practices"
+    },
+    {
+      "id": "DF-024",
+      "component": "dockerfile",
+      "description": "CMD is in shell form rather than exec form",
+      "severity": "medium",
+      "check": "df_cmd_shell_form",
+      "recommendation": "Use the exec form of CMD to avoid wrapping the process in a shell. Source: Docker Official Best Practices"
+    },
+    {
+      "id": "DF-025",
+      "component": "dockerfile",
+      "description": "EXPOSE instruction contains port 22 (SSH)",
+      "severity": "medium",
+      "check": "df_expose_port_22",
+      "recommendation": "Containers should not run SSH daemons. Use 'docker exec' for container access. Source: NIST SP 800-190"
+    },
+    {
+      "id": "DF-026",
+      "component": "dockerfile",
+      "description": "wget or curl is used without a checksum validation pipe (e.g., sha256sum)",
+      "severity": "medium",
+      "check": "df_missing_checksum",
+      "recommendation": "Always validate the checksum of downloaded binaries to prevent supply chain attacks. Source: SLSA Supply Chain Security Guidelines"
+    },
+    {
+      "id": "DF-027",
+      "component": "dockerfile",
+      "description": "apk add is used without pinning package versions",
+      "severity": "medium",
+      "check": "df_apk_unpinned",
+      "recommendation": "Pin package versions in 'apk add' (e.g., apk add package=1.2.3) to ensure deterministic builds. Source: CIS Docker Benchmark"
+    },
+    {
+      "id": "DF-028",
+      "component": "dockerfile",
+      "description": "apt-get install is used without pinning package versions",
+      "severity": "medium",
+      "check": "df_apt_unpinned",
+      "recommendation": "Pin package versions in 'apt-get install' (e.g., apt-get install package=1.2.3) to ensure deterministic builds. Source: CIS Docker Benchmark"
+    },
+    {
+      "id": "DF-029",
+      "component": "dockerfile",
+      "description": "HEALTHCHECK interval is missing or set to zero",
+      "severity": "medium",
+      "check": "df_healthcheck_no_interval",
+      "recommendation": "HEALTHCHECK instructions must specify an interval greater than 0 to be effective. Source: CIS Docker Benchmark 4.6"
+    },
+    {
+      "id": "DF-030",
+      "component": "dockerfile",
+      "description": "COPY is followed by a RUN chown command",
+      "severity": "low",
+      "check": "df_copy_run_chown",
+      "recommendation": "Use the '--chown' flag in the COPY instruction (e.g., COPY --chown=user:group src dest) to reduce image layer size. Source: Docker Official Best Practices"
+    },
+    {
+      "id": "DF-031",
+      "component": "dockerfile",
+      "description": "Base image is pulled from an untrusted generic public registry path",
+      "severity": "high",
+      "check": "df_untrusted_registry",
+      "recommendation": "Avoid using generic untrusted images. Prefer Official Images, Verified Publishers, or your own private registry. Source: CIS Docker Benchmark 4.2"
+    },
+    {
+      "id": "DF-032",
+      "component": "dockerfile",
+      "description": "Dockerfile lacks multi-stage build structure for compiled languages",
+      "severity": "medium",
+      "check": "df_no_multi_stage",
+      "recommendation": "Use multi-stage builds to compile code in one stage and copy only the final binary to the production stage. Source: Docker Official Best Practices"
+    },
+    {
+      "id": "DF-033",
+      "component": "dockerfile",
+      "description": "User is switched to root later in the Dockerfile",
+      "severity": "high",
+      "check": "df_user_switched_to_root",
+      "recommendation": "Do not switch back to the root user after setting a non-root USER. Source: NIST SP 800-190"
+    },
+    {
+      "id": "DF-034",
+      "component": "dockerfile",
+      "description": "Use of unencrypted HTTP protocols in package managers",
+      "severity": "medium",
+      "check": "df_http_package_repo",
+      "recommendation": "Ensure package manager repositories use HTTPS to prevent man-in-the-middle attacks during build. Source: NIST SP 800-190"
+    },
+    {
+      "id": "IMG-011",
+      "component": "image",
+      "description": "Image has no healthcheck metadata",
+      "severity": "medium",
+      "check": "img_no_healthcheck",
+      "recommendation": "Add a HEALTHCHECK instruction to the Dockerfile. Source: CIS Docker Benchmark 4.6"
+    },
+    {
+      "id": "IMG-012",
+      "component": "image",
+      "description": "Image signed by Docker Content Trust / Cosign is missing",
+      "severity": "high",
+      "check": "img_no_trust",
+      "recommendation": "Enable Docker Content Trust or use Cosign to sign images. Source: CIS Docker Benchmark 4.5"
+    },
+    {
+      "id": "IMG-013",
+      "component": "image",
+      "description": "Image history contains ADD instructions",
+      "severity": "medium",
+      "check": "img_history_has_add",
+      "recommendation": "Use COPY instead of ADD to prevent automatic extraction or remote URL downloads. Source: CIS Docker Benchmark 4.3"
+    },
+    {
+      "id": "IMG-014",
+      "component": "image",
+      "description": "Image history contains system upgrade commands",
+      "severity": "medium",
+      "check": "img_history_system_upgrade",
+      "recommendation": "Do not upgrade system packages during build. Rebuild from a patched base image instead. Source: CIS Docker Benchmark 4.7"
+    },
+    {
+      "id": "IMG-016",
+      "component": "image",
+      "description": "Image history contains sensitive keywords (password, secret)",
+      "severity": "critical",
+      "check": "img_history_secrets",
+      "recommendation": "Do not store secrets in image history or layers. Use secret management tools. Source: CIS Docker Benchmark 4.10"
+    },
+    {
+      "id": "IMG-017",
+      "component": "image",
+      "description": "USER is explicitly set to root or 0",
+      "severity": "high",
+      "check": "img_explicit_root_user",
+      "recommendation": "Set the USER to a non-privileged account. Source: CIS Docker Benchmark 4.1"
+    },
+    {
+      "id": "IMG-018",
+      "component": "image",
+      "description": "Image has suspiciously large layers (> 500MB per layer)",
+      "severity": "low",
+      "check": "img_huge_layers",
+      "recommendation": "Break down large layers or use multi-stage builds to optimize image size. Source: Docker Official Best Practices"
+    },
+    {
+      "id": "IMG-020",
+      "component": "image",
+      "description": "Image exposes ports on all interfaces (0.0.0.0) in Expose configurations",
+      "severity": "medium",
+      "check": "img_expose_all_interfaces",
+      "recommendation": "Do not bind exposed ports to 0.0.0.0 directly in the image metadata. Source: NIST SP 800-190"
+    },
+    {
+      "id": "IMG-022",
+      "component": "image",
+      "description": "Image configuration contains debugging environment variables",
+      "severity": "medium",
+      "check": "img_debug_env_vars",
+      "recommendation": "Remove debugging environment variables (like DEBUG=1) from production images. Source: OWASP Docker Security"
+    },
+    {
+      "id": "IMG-023",
+      "component": "image",
+      "description": "Image lacks ENTRYPOINT but has CMD, or vice-versa",
+      "severity": "medium",
+      "check": "img_missing_entrypoint_or_cmd",
+      "recommendation": "Define an ENTRYPOINT to make the container executable, and use CMD for default arguments. Source: Docker Official Best Practices"
+    },
+    {
+      "id": "IMG-025",
+      "component": "image",
+      "description": "Image metadata contains overly permissive Volumes without security profiles",
+      "severity": "medium",
+      "check": "img_permissive_volumes",
+      "recommendation": "Limit declared volumes and enforce read-only where possible. Source: NIST SP 800-190"
+    },
+    {
+      "id": "IMG-026",
+      "component": "image",
+      "description": "Image layers contain wget/curl without checksum validation",
+      "severity": "medium",
+      "check": "img_history_missing_checksum",
+      "recommendation": "Validate fetched binaries via checksum to protect against supply chain tampering. Source: SLSA"
+    },
+    {
+      "id": "DC-018",
+      "component": "compose",
+      "description": "Service lacks cap_drop: - ALL",
+      "severity": "high",
+      "check": "dc_missing_cap_drop_all",
+      "recommendation": "Drop all Linux capabilities by default and only add back what is strictly necessary. Source: CIS Docker Benchmark"
+    },
+    {
+      "id": "DC-019",
+      "component": "compose",
+      "description": "Service lacks security_opt: - no-new-privileges:true",
+      "severity": "high",
+      "check": "dc_missing_no_new_privileges",
+      "recommendation": "Prevent privilege escalation by explicitly setting no-new-privileges:true. Source: CIS Docker Benchmark"
+    },
+    {
+      "id": "DC-020",
+      "component": "compose",
+      "description": "Service mounts .env or sensitive files as volumes",
+      "severity": "high",
+      "check": "dc_mounts_sensitive_files",
+      "recommendation": "Do not mount sensitive files into the container. Use Docker Secrets instead. Source: NIST SP 800-190"
+    },
+    {
+      "id": "DC-021",
+      "component": "compose",
+      "description": "Service does not configure a custom network",
+      "severity": "high",
+      "check": "dc_no_custom_network",
+      "recommendation": "Use custom user-defined networks for strict service isolation instead of the default bridge. Source: CIS Docker Benchmark"
+    },
+    {
+      "id": "DC-022",
+      "component": "compose",
+      "description": "Service exposes Docker socket /var/run/docker.sock",
+      "severity": "critical",
+      "check": "dc_exposes_docker_sock",
+      "recommendation": "Never mount the Docker socket inside a container unless absolutely necessary, as it grants full root access to the host. Source: CIS Docker Benchmark"
+    },
+    {
+      "id": "DC-023",
+      "component": "compose",
+      "description": "Service lacks read_only: true",
+      "severity": "high",
+      "check": "dc_missing_read_only",
+      "recommendation": "Set the container's root filesystem to read-only to prevent tampering. Source: CIS Docker Benchmark"
+    },
+    {
+      "id": "DC-024",
+      "component": "compose",
+      "description": "Service uses network_mode: bridge explicitly",
+      "severity": "low",
+      "check": "dc_explicit_bridge",
+      "recommendation": "Avoid using explicit bridge mode; rely on named overlay or bridge networks. Source: Docker Best Practices"
+    },
+    {
+      "id": "DC-025",
+      "component": "compose",
+      "description": "Service mounts the host root / directory",
+      "severity": "high",
+      "check": "dc_mounts_root",
+      "recommendation": "Do not mount the host root filesystem into a container. Source: CIS Docker Benchmark"
+    },
+    {
+      "id": "DC-026",
+      "component": "compose",
+      "description": "Service mounts the host /etc directory",
+      "severity": "high",
+      "check": "dc_mounts_etc",
+      "recommendation": "Do not mount the host /etc directory into a container. Source: CIS Docker Benchmark"
+    },
+    {
+      "id": "DC-027",
+      "component": "compose",
+      "description": "Service uses env_file instead of Docker secrets",
+      "severity": "high",
+      "check": "dc_uses_env_file",
+      "recommendation": "Use Docker Secrets for sensitive configuration rather than env_files. Source: Docker Best Practices"
+    },
+    {
+      "id": "DC-028",
+      "component": "compose",
+      "description": "Service lacks a logging driver configuration with max-size",
+      "severity": "medium",
+      "check": "dc_missing_logging_config",
+      "recommendation": "Configure log rotation with max-size to prevent unbounded log growth. Source: Docker Best Practices"
+    },
+    {
+      "id": "DC-029",
+      "component": "compose",
+      "description": "Service tmpfs mounts lack explicit size limits",
+      "severity": "medium",
+      "check": "dc_tmpfs_no_size",
+      "recommendation": "Always specify a size limit for tmpfs mounts to prevent memory exhaustion. Source: Docker Best Practices"
+    },
+    {
+      "id": "DC-030",
+      "component": "compose",
+      "description": "Service binds to privileged ports (<1024)",
+      "severity": "medium",
+      "check": "dc_privileged_ports",
+      "recommendation": "Avoid binding container services to privileged host ports below 1024. Source: NIST SP 800-190"
+    },
+    {
+      "id": "DC-031",
+      "component": "compose",
+      "description": "Service lacks explicit depends_on for startup ordering",
+      "severity": "medium",
+      "check": "dc_missing_depends_on",
+      "recommendation": "Use depends_on to strictly define startup ordering for interrelated services. Source: Docker Best Practices"
+    },
+    {
+      "id": "DC-032",
+      "component": "compose",
+      "description": "Service uses cgroup_parent which can bypass isolation",
+      "severity": "critical",
+      "check": "dc_uses_cgroup_parent",
+      "recommendation": "Do not override cgroup_parent unless specifically required for custom orchestration. Source: Docker Security"
+    },
+    {
+      "id": "DC-033",
+      "component": "compose",
+      "description": "Service defines userns_mode: host breaking user namespace isolation",
+      "severity": "critical",
+      "check": "dc_userns_host",
+      "recommendation": "Avoid disabling user namespace isolation via userns_mode: host. Source: CIS Docker Benchmark"
+    },
+    {
+      "id": "SW-018",
+      "component": "swarm",
+      "description": "Swarm manager auto-lock mode not explicitly handled",
+      "severity": "critical",
+      "check": "sw_missing_autolock",
+      "recommendation": "Enable autolock on swarm managers to encrypt the Raft log. Source: CIS Docker Benchmark"
+    },
+    {
+      "id": "SW-019",
+      "component": "swarm",
+      "description": "Swarm overlay network is unencrypted",
+      "severity": "critical",
+      "check": "sw_unencrypted_overlay",
+      "recommendation": "Set driver_opts encrypted: true on overlay networks to secure data-plane traffic. Source: CIS Docker Benchmark"
+    },
+    {
+      "id": "SW-020",
+      "component": "swarm",
+      "description": "Swarm service uses host-bound volume mounts",
+      "severity": "high",
+      "check": "sw_host_volume",
+      "recommendation": "Avoid binding host directories directly; use named volumes for swarm mobility. Source: NIST SP 800-190"
+    },
+    {
+      "id": "SW-021",
+      "component": "swarm",
+      "description": "Swarm nodes missing placement constraints / role separation",
+      "severity": "medium",
+      "check": "sw_missing_placement",
+      "recommendation": "Use placement constraints to ensure services land on appropriate worker nodes, isolating managers. Source: NIST SP 800-190"
+    },
+    {
+      "id": "SW-022",
+      "component": "swarm",
+      "description": "Swarm manager binding to untrusted / wildcard interfaces (0.0.0.0)",
+      "severity": "critical",
+      "check": "sw_wildcard_binding",
+      "recommendation": "Bind swarm endpoints to specific trusted management interfaces. Source: CIS Docker Benchmark"
+    },
+    {
+      "id": "SW-023",
+      "component": "swarm",
+      "description": "Swarm service does not declare rolling update parallelism limits",
+      "severity": "medium",
+      "check": "sw_missing_update_config",
+      "recommendation": "Define update_config with parallelism limits to prevent cluster-wide outages during updates. Source: Docker Best Practices"
+    },
+    {
+      "id": "SW-024",
+      "component": "swarm",
+      "description": "Swarm secret mapped to container filesystem improperly",
+      "severity": "high",
+      "check": "sw_improper_secrets",
+      "recommendation": "Ensure swarm secrets are managed by the orchestrator and mounted in tmpfs. Source: NIST SP 800-190"
+    },
+    {
+      "id": "SW-025",
+      "component": "swarm",
+      "description": "Swarm service exposes management API ports",
+      "severity": "critical",
+      "check": "sw_exposes_mgmt_ports",
+      "recommendation": "Do not expose ports 2377, 7946, or 4789 on service containers. Source: CIS Docker Benchmark"
+    },
+    {
+      "id": "SW-026",
+      "component": "swarm",
+      "description": "Swarm service lacks declarative CPU limits",
+      "severity": "medium",
+      "check": "sw_missing_cpu_limit",
+      "recommendation": "Set CPU resource limits on swarm services to prevent noisy neighbor issues. Source: Docker Best Practices"
+    },
+    {
+      "id": "SW-027",
+      "component": "swarm",
+      "description": "Swarm service lacks declarative memory limits",
+      "severity": "medium",
+      "check": "sw_missing_mem_limit",
+      "recommendation": "Set memory resource limits on swarm services to prevent Out-Of-Memory host crashes. Source: Docker Best Practices"
+    },
+    {
+      "id": "SW-028",
+      "component": "swarm",
+      "description": "Swarm service deployment uses global mode",
+      "severity": "low",
+      "check": "sw_global_mode",
+      "recommendation": "Use replicated mode instead of global mode unless strictly required for DaemonSets. Source: Docker Best Practices"
+    },
+    {
+      "id": "SW-029",
+      "component": "swarm",
+      "description": "Swarm config mapped via env variables instead of Docker Configs",
+      "severity": "high",
+      "check": "sw_env_instead_of_configs",
+      "recommendation": "Use Docker Configs for application configuration instead of injecting large environment payloads. Source: Docker Best Practices"
+    },
+    {
+      "id": "SW-030",
+      "component": "swarm",
+      "description": "Swarm service ignores endpoint_mode dnsrr for internal discovery",
+      "severity": "low",
+      "check": "sw_missing_dnsrr",
+      "recommendation": "Consider dnsrr endpoint_mode for internal headless services instead of VIP. Source: Docker Best Practices"
+    },
+    {
+      "id": "SW-031",
+      "component": "swarm",
+      "description": "Swarm service uses --cap-add=ALL",
+      "severity": "high",
+      "check": "sw_cap_add_all",
+      "recommendation": "Do not grant all capabilities to swarm services. Source: CIS Docker Benchmark"
+    },
+    {
+      "id": "SW-032",
+      "component": "swarm",
+      "description": "Swarm services bypassing routing mesh using explicit host ports",
+      "severity": "medium",
+      "check": "sw_host_ports",
+      "recommendation": "Avoid using 'mode: host' for port publishing; rely on the ingress routing mesh. Source: Docker Security"
+    },
+    {
+      "id": "SW-033",
+      "component": "swarm",
+      "description": "Swarm service deployed without healthcheck propagation",
+      "severity": "medium",
+      "check": "sw_missing_healthcheck",
+      "recommendation": "Ensure healthchecks are defined so the orchestrator can reschedule unhealthy containers. Source: CIS Docker Benchmark"
+    },
+    {
+      "id": "DF-035",
+      "severity": "low",
+      "description": "rule_desc_DF-036",
+      "recommendation": "rule_rec_DF-036",
+      "component": "dockerfile",
+      "check": "df_workdir_relative"
+    },
+    {
+      "id": "DF-036",
+      "severity": "medium",
+      "description": "rule_desc_DF-039",
+      "recommendation": "rule_rec_DF-039",
+      "component": "dockerfile",
+      "check": "df_gem_unpinned"
+    },
+    {
+      "id": "DF-037",
+      "severity": "medium",
+      "description": "rule_desc_DF-040",
+      "recommendation": "rule_rec_DF-040",
+      "component": "dockerfile",
+      "check": "df_npm_unpinned"
+    },
+    {
+      "id": "DF-038",
+      "severity": "low",
+      "description": "rule_desc_DF-042",
+      "recommendation": "rule_rec_DF-042",
+      "component": "dockerfile",
+      "check": "df_yum_no_y"
+    },
+    {
+      "id": "DF-039",
+      "severity": "medium",
+      "description": "rule_desc_DF-044",
+      "recommendation": "rule_rec_DF-044",
+      "component": "dockerfile",
+      "check": "df_yum_unpinned"
+    },
+    {
+      "id": "DF-040",
+      "severity": "low",
+      "description": "rule_desc_DF-045",
+      "recommendation": "rule_rec_DF-045",
+      "component": "dockerfile",
+      "check": "df_zypper_no_y"
+    },
+    {
+      "id": "DF-041",
+      "severity": "low",
+      "description": "rule_desc_DF-047",
+      "recommendation": "rule_rec_DF-047",
+      "component": "dockerfile",
+      "check": "df_zypper_no_clean"
+    },
+    {
+      "id": "DF-042",
+      "severity": "medium",
+      "description": "rule_desc_DF-048",
+      "recommendation": "rule_rec_DF-048",
+      "component": "dockerfile",
+      "check": "df_zypper_unpinned"
+    },
+    {
+      "id": "DF-043",
+      "severity": "low",
+      "description": "rule_desc_DF-049",
+      "recommendation": "rule_rec_DF-049",
+      "component": "dockerfile",
+      "check": "df_dnf_no_y"
+    },
+    {
+      "id": "DF-044",
+      "severity": "low",
+      "description": "rule_desc_DF-050",
+      "recommendation": "rule_rec_DF-050",
+      "component": "dockerfile",
+      "check": "df_dnf_no_clean"
+    },
+    {
+      "id": "DF-045",
+      "severity": "medium",
+      "description": "rule_desc_DF-051",
+      "recommendation": "rule_rec_DF-051",
+      "component": "dockerfile",
+      "check": "df_dnf_unpinned"
+    },
+    {
+      "id": "DF-046",
+      "severity": "low",
+      "description": "rule_desc_DF-052",
+      "recommendation": "rule_rec_DF-052",
+      "component": "dockerfile",
+      "check": "df_multiple_healthcheck"
+    },
+    {
+      "id": "DF-047",
+      "severity": "low",
+      "description": "rule_desc_DF-053",
+      "recommendation": "rule_rec_DF-053",
+      "component": "dockerfile",
+      "check": "df_invalid_expose"
+    },
+    {
+      "id": "DF-048",
+      "severity": "low",
+      "description": "rule_desc_DF-054",
+      "recommendation": "rule_rec_DF-054",
+      "component": "dockerfile",
+      "check": "df_copy_bad_dest"
+    },
+    {
+      "id": "DF-049",
+      "severity": "medium",
+      "description": "rule_desc_DF-055",
+      "recommendation": "rule_rec_DF-055",
+      "component": "dockerfile",
+      "check": "df_copy_bad_from"
+    },
+    {
+      "id": "DF-050",
+      "severity": "medium",
+      "description": "rule_desc_DF-056",
+      "recommendation": "rule_rec_DF-056",
+      "component": "dockerfile",
+      "check": "df_from_not_unique"
+    },
+    {
+      "id": "DF-051",
+      "severity": "low",
+      "description": "rule_desc_DF-058",
+      "recommendation": "rule_rec_DF-058",
+      "component": "dockerfile",
+      "check": "df_apt_used"
+    },
+    {
+      "id": "IMG-028",
+      "severity": "medium",
+      "description": "rule_desc_IMG-028",
+      "recommendation": "rule_rec_IMG-028",
+      "component": "image",
+      "check": "img_missing_sbom"
+    },
+    {
+      "id": "IMG-029",
+      "severity": "medium",
+      "description": "rule_desc_IMG-029",
+      "recommendation": "rule_rec_IMG-029",
+      "component": "image",
+      "check": "img_missing_slsa"
+    },
+    {
+      "id": "IMG-030",
+      "severity": "low",
+      "description": "rule_desc_IMG-030",
+      "recommendation": "rule_rec_IMG-030",
+      "component": "image",
+      "check": "img_full_os_base"
+    },
+    {
+      "id": "IMG-031",
+      "severity": "high",
+      "description": "rule_desc_IMG-031",
+      "recommendation": "rule_rec_IMG-031",
+      "component": "image",
+      "check": "img_debug_tools"
+    },
+    {
+      "id": "IMG-032",
+      "severity": "high",
+      "description": "rule_desc_IMG-032",
+      "recommendation": "rule_rec_IMG-032",
+      "component": "image",
+      "check": "img_shell_in_prod"
+    },
+    {
+      "id": "IMG-033",
+      "severity": "medium",
+      "description": "rule_desc_IMG-033",
+      "recommendation": "rule_rec_IMG-033",
+      "component": "image",
+      "check": "img_pkg_manager"
     }
   ]
 }

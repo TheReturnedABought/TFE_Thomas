@@ -1,45 +1,15 @@
 version: '3.8'
-
-# Edge Case 1: Empty top-level blocks
-networks:
-volumes:
-
-# Edge Case 2: Services without standard dictionaries
 services:
-  null_service_block:
-  weird_build_only:
-    # No image defined, relies entirely on build block
-    build:
-      context: .
-      dockerfile: Dockerfile.edge
-    # Int ports instead of strings
+  web:
+    image: ${IMAGE_NAME:-my-web}:${IMAGE_TAG:-latest}
+    user: ${USER_ID:-1000}:${GROUP_ID:-1000}
     ports:
-      - 80
-      - 8080:80
-    # Environment as a list instead of dictionary
-    environment:
-      - DEBUG=1
-      - SECRET_KEY=edge_case
-    cap_add:
-      - NET_ADMIN  # Should not trigger ALL/SYS_ADMIN
-
-  # Edge Case 3: Empty dictionary service
-    user: '1000'
-  empty_service:
-    user: '1000'
-
-  # Edge Case 4: Values set to explicitly null
-  null_service:
-    image:
-    user:
-    privileged:
-
-  # Edge Case 5: Duplicate complex volumes
-  volume_tester:
-    image: alpine:3.14
-    volumes:
-      - type: bind
-        source: /etc/shadow
-        target: /tmp/shadow
-        read_only: false
-    user: '1000'
+      - target: 8080
+        published: 8080
+        protocol: tcp
+        mode: host
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 50M

@@ -58,7 +58,7 @@ This project was built to demonstrate professional Python software engineering p
 - **CI/CD AutoFix Engine (`--fix`)** — Implements an automated remediation layer replacing vulnerable AST structures with safe nodes natively without stripping configuration layouts.
 - **SARIF Code Scanning Export** — Generates `dockcheck_report.sarif` mapping securely onto OASIS v2.1.0 specifications for immediate ingestion into **GitHub Advanced Security** and **GitLab SAST** dashboards.
 - **Compiler Level Parse Integrity** — Implements pure-state-machine Dockerfile AST generation guaranteeing 100% resilience against multiline syntax formatting failures structurally tested against 10,000 bounds of fuzzed hypothesis noise limiters.
-- **i18n Localization (`--lang fr`)** — Complete decoupling of english strings scaling natively to generalized i18n JSON locales (supports native French out of the box).
+- **i18n Localization (`--lang fr`)** — Complete decoupling of english strings scaling natively to generalized i18n JSON locales (supports native French and Spanish out of the box).
 - **Exit codes** — returns `0` (no issues) or `1` (issues found) for pipeline integration.
 - **Custom rules** — supports a custom `rules.json` file via `--rules`.
 
@@ -90,7 +90,7 @@ All analysis is **read-only** and **isolated** from the host system. No containe
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/dockcheck.git
+git clone https://github.com/TheReturnedABought/dockcheck.git
 cd dockcheck
 
 # Install dependencies
@@ -147,7 +147,7 @@ python main.py all \
 | `--output`, `-o` | `dockcheck_report.html` | Path for the HTML report |
 | `--sarif-output` | `dockcheck_report.sarif` | Generates a SARIF file alongside HTML for CI/CD SAST dashboard aggregation |
 | `--fix` | false | Automatically mitigates simple static issues natively. For complex issues, outputs a warning explicitly flagged for manual engineering review. |
-| `--lang` | `en` | Overrides reporting strings localization (supports `en`, `fr`) |
+| `--lang` | `en` | Overrides reporting strings localization (supports `en`, `fr`, 'es') |
 | `--severity`, `-s` | `low` | Minimum severity to report (`low`, `medium`, `critical`) |
 | `--no-report` | false | Skip HTML generation, print summary only |
 | `--rules` | built-in | Path to a custom rules JSON file |
@@ -265,62 +265,163 @@ Rules are defined in `rules/default_rules.json`. Each rule has an `id`, `severit
 
 | ID | Severity | Description |
 |----|----------|-------------|
-| DF-001 | medium | Unversioned base image (`:latest` or no tag) |
-| DF-002 | critical | Running as root (no `USER` or `USER root`) |
-| DF-003 | low | Multiple consecutive `RUN` instructions |
-| DF-004 | low | `ADD` used instead of `COPY` |
-| DF-005 | low | Missing `WORKDIR` |
-| DF-006 | medium | Split `apt-get update` / `apt-get install` |
-| DF-010 | low | apk add used without --no-cache |
-| DF-011 | low | yum install used without repository cleanup |
-| DF-012 | medium | curl used without silent-fail flags (-fSL) |
-| DF-013 | low | wget used without quiet-output stream bindings |
-| DF-014 | critical | sudo executed during Docker build |
-| DF-015 | low | apt-get install used without footprint cleanup |
-| DF-016 | low | No EXPOSE network port mappings declared |
-| DF-017 | low | Use of deprecated MAINTAINER tag |
-| DF-018 | medium | Inline path traversals (cd) rather than deterministic WORKDIR |
-| DF-019 | low | npm install used without clearing node caching |
+| DF-001 | high | Unversioned base image (`:latest` or no tag) (Source: CIS 4.2 / Docker Best Practices) |
+| DF-002 | high | Running as root (no `USER` or `USER root`) (Source: CIS 4.1 / IBM) |
+| DF-003 | low | Multiple consecutive `RUN` instructions (Source: Docker Best Practices) |
+| DF-004 | medium | `ADD` used instead of `COPY` (Source: CIS 4.3 / Docker Best Practices) |
+| DF-005 | low | Missing `WORKDIR` (Source: Docker Best Practices) |
+| DF-006 | low | Split `apt-get update` / `apt-get install` (Source: Docker Best Practices) |
+| DF-007 | medium | No HEALTHCHECK instruction defined (Source: CIS 4.6 / IBM) |
+| DF-008 | low | apt-get install used without --no-install-recommends (Source: CIS / 0xfujin) |
+| DF-009 | low | pip install used without --no-cache-dir (Source: 0xfujin) |
+| DF-010 | low | apk add used without --no-cache (Source: Alpine Best Practices) |
+| DF-011 | low | yum install used without repository cleanup (Source: RedHat Best Practices) |
+| DF-012 | low | curl used without silent-fail flags (-fSL) (Source: Docker Best Practices) |
+| DF-013 | low | wget used without quiet-output stream bindings (Source: Docker Best Practices) |
+| DF-014 | low | sudo executed during Docker build (Source: CIS 4.1 / Docker Best Practices) |
+| DF-015 | medium | apt-get install used without footprint cleanup (Source: 10 Docker Best Practices) |
+| DF-016 | low | No EXPOSE network port mappings declared (Source: Docker Best Practices) |
+| DF-018 | low | Inline path traversals (cd) rather than deterministic WORKDIR (Source: Docker Best Practices) |
+| DF-019 | low | npm install used without clearing node caching (Source: Node.js Best Practices) |
+| DF-020 | medium | System-wide package updates (e.g., apt-get upgrade) (Source: CIS 4.7) |
+| DF-021 | high | Image potentially retains setuid/setgid permissions (Source: CIS 4.8) |
+| DF-022 | high | Dockerfile uses ARG for sensitive data (Source: Docker Sec) |
+| DF-023 | medium | ENTRYPOINT is in shell form rather than exec form (Source: Docker Sec) |
+| DF-024 | medium | CMD is in shell form rather than exec form (Source: Docker Sec) |
+| DF-025 | medium | EXPOSE instruction contains port 22 (SSH) (Source: NIST SP 800-190) |
+| DF-026 | medium | wget or curl is used without a checksum validation pipe (Source: SLSA) |
+| DF-027 | medium | apk add is used without pinning package versions (Source: CIS) |
+| DF-028 | medium | apt-get install is used without pinning package versions (Source: CIS) |
+| DF-029 | medium | HEALTHCHECK interval is missing or set to zero (Source: CIS 4.6) |
+| DF-030 | low | COPY is followed by a RUN chown command (Source: Docker Sec) |
+| DF-031 | high | Base image is pulled from an untrusted generic public registry path (Source: CIS 4.2) |
+| DF-032 | medium | Dockerfile lacks multi-stage build structure for compiled languages (Source: Docker Sec) |
+| DF-033 | high | User is switched to root later in the Dockerfile (Source: NIST SP 800-190) |
+| DF-034 | medium | Use of unencrypted HTTP protocols in package managers (Source: NIST SP 800-190) |
+| DF-035 | low | WORKDIR is relative, not absolute (Source: DL3000) |
+| DF-036 | medium | gem install without version pinning (Source: DL3028) |
+| DF-037 | medium | npm install without version pinning (Source: DL3016) |
+| DF-038 | low | yum install without -y (Source: DL3030) |
+| DF-039 | medium | yum install without version pinning (Source: DL3033) |
+| DF-040 | low | zypper install without -y (Source: DL3034) |
+| DF-041 | low | zypper clean missing (Source: DL3036) |
+| DF-042 | medium | zypper install without version pinning (Source: DL3037) |
+| DF-043 | low | dnf install without -y (Source: DL3038) |
+| DF-044 | low | dnf clean all missing (Source: DL3040) |
+| DF-045 | medium | dnf install without version pinning (Source: DL3041) |
+| DF-046 | low | Multiple HEALTHCHECK instructions used (Source: DL3012) |
+| DF-047 | low | Invalid port range in EXPOSE (Source: DL3011) |
+| DF-048 | low | COPY with >2 args doesn't end with / (Source: DL3021) |
+| DF-049 | medium | COPY --from references non-existent stage (Source: DL3022) |
+| DF-050 | medium | FROM stage aliases are not unique (Source: DL3024) |
+| DF-051 | low | Use of apt instead of apt-get (Source: DL3027) |
 
 ### Image rules (IMG-*)
 
 | ID | Severity | Description |
 |----|----------|-------------|
-| IMG-001 | low | Missing image labels |
-| IMG-002 | critical | Sensitive data in environment variables |
-| IMG-003 | medium | Excessive layer count (> 20) |
-| IMG-004 | critical | Image runs as root |
-| IMG-005 | medium | Unversioned base image |
-| IMG-006 | medium | Total image payload significantly exceeds 1GB limit |
-| IMG-007 | low | Virtual network mappings lack ExposedPorts structure definitions |
-| IMG-008 | critical | Scratch infrastructure defaults silently back to unregulated ROOT mappings |
-| IMG-009 | medium | Production configurations rely implicitly upon 'latest' tag allocations |
-| IMG-010 | medium | Constructed object artifacts miss active daemon process triggers (CMD/ENTRYPOINT) |
+| IMG-001 | high | Missing image labels (Source: Docker Best Practices) |
+| IMG-002 | critical | Sensitive data in environment variables (Source: CIS 4.10 / NIST SP 800-190) |
+| IMG-003 | low | Excessive layer count (> 20) (Source: Docker Best Practices) |
+| IMG-004 | high | Image runs as root (Source: CIS 4.1 / NIST SP 800-190) |
+| IMG-005 | high | Unversioned base image (Source: CIS 4.2) |
+| IMG-006 | low | Total image payload significantly exceeds 1GB limit (Source: Docker Best Practices) |
+| IMG-008 | high | Scratch infrastructure defaults silently back to unregulated ROOT mappings (Source: NIST SP 800-190) |
+| IMG-009 | high | Production configurations rely implicitly upon 'latest' tag allocations (Source: CIS 4.2) |
+| IMG-010 | medium | Constructed object artifacts miss active daemon process triggers (CMD/ENTRYPOINT) (Source: Docker Best Practices) |
+| IMG-011 | medium | Image has no healthcheck metadata (Source: CIS 4.6) |
+| IMG-012 | high | Image signed by Docker Content Trust / Cosign is missing (Source: CIS 4.5) |
+| IMG-013 | medium | Image history contains ADD instructions (Source: CIS 4.3) |
+| IMG-014 | medium | Image history contains system upgrade commands (Source: CIS 4.7) |
+| IMG-016 | critical | Image history contains sensitive keywords (password, secret) (Source: CIS 4.10) |
+| IMG-017 | high | USER is explicitly set to root or 0 (Source: CIS 4.1) |
+| IMG-018 | low | Image has suspiciously large layers (> 500MB per layer) (Source: Docker Best Practices) |
+| IMG-020 | medium | Image exposes ports on all interfaces (0.0.0.0) in Expose configurations (Source: NIST SP 800-190) |
+| IMG-022 | medium | Image configuration contains debugging environment variables (Source: OWASP Docker Security) |
+| IMG-023 | medium | Image lacks ENTRYPOINT but has CMD, or vice-versa (Source: Docker Best Practices) |
+| IMG-025 | medium | Image metadata contains overly permissive Volumes without security profiles (Source: NIST SP 800-190) |
+| IMG-026 | medium | Image layers contain wget/curl without checksum validation (Source: SLSA) |
+| IMG-028 | medium | Missing SBOM (Source: Anchore/Syft) |
+| IMG-029 | medium | Missing SLSA provenance attestation (Source: SLSA) |
+| IMG-030 | low | Full OS base when distroless would suffice (Source: Google Distroless) |
+| IMG-031 | high | Debugging tools found in layers (Source: Docker Hardened) |
+| IMG-032 | high | Shell found in a production image layer (Source: Docker Hardened) |
+| IMG-033 | medium | Package managers found in layers (Source: Docker Hardened) |
 
 ### Compose rules (DC-*)
 
 | ID | Severity | Description |
 |----|----------|-------------|
-| DC-001 | medium | Service uses `:latest` or untagged image |
-| DC-002 | critical | Service runs as root or has no `user` |
-| DC-003 | critical | Hardcoded secret in environment variables |
-| DC-004 | medium | Port exposed on all interfaces or sensitive port |
-| DC-005 | low | Duplicate service images |
+| DC-001 | high | Service uses `:latest` or untagged image (Source: Docker Best Practices) |
+| DC-002 | high | Service runs as root or has no `user` (Source: CIS Docker Benchmark) |
+| DC-003 | critical | Hardcoded secret in environment variables (Source: Docker Sec) |
+| DC-004 | medium | Port exposed on all interfaces or sensitive port (Source: NIST SP 800-190) |
+| DC-005 | low | Duplicate service images (Source: TFE Base) |
+| DC-006 | critical | Service runs in privileged mode (Source: IBM Docker Security) |
+| DC-007 | medium | Volume not mounted as read-only (Source: IBM Docker Security) |
+| DC-008 | medium | Service missing declarative restart parameter (Source: TFE Base) |
+| DC-009 | medium | Service missing a localized healthcheck configuration (Source: Docker Best Practices) |
+| DC-010 | critical | Service assigns container to host network mode (Source: CIS Docker Benchmark) |
+| DC-011 | critical | Service breaks PID namespace via host mapping (Source: NIST SP 800-190) |
+| DC-012 | low | Service ignores structured resource memory/CPU limitations (Source: Docker Sec) |
+| DC-014 | high | SYS_ADMIN or ALL capability escalation granted (Source: CIS Docker Benchmark) |
+| DC-015 | critical | Inter-Process Communication attached directly to Host (Source: NIST SP 800-190) |
+| DC-016 | low | Fixed deployment bounded by hardcoded MAC identifiers (Source: TFE Base) |
+| DC-017 | medium | DNS queries strictly overridden skipping internal resolvers (Source: Docker Best Practices) |
+| DC-018 | high | Service lacks cap_drop: - ALL (Source: CIS Docker Benchmark) |
+| DC-019 | high | Service lacks security_opt: - no-new-privileges:true (Source: CIS Docker Benchmark) |
+| DC-020 | high | Service mounts .env or sensitive files as volumes (Source: NIST SP 800-190) |
+| DC-021 | high | Service does not configure a custom network (Source: CIS Docker Benchmark) |
+| DC-022 | critical | Service exposes Docker socket /var/run/docker.sock (Source: CIS Docker Benchmark) |
+| DC-023 | high | Service lacks read_only: true (Source: CIS Docker Benchmark) |
+| DC-024 | low | Service uses network_mode: bridge explicitly (Source: Docker Best Practices) |
+| DC-025 | high | Service mounts the host root / directory (Source: CIS Docker Benchmark) |
+| DC-026 | high | Service mounts the host /etc directory (Source: CIS Docker Benchmark) |
+| DC-027 | high | Service uses env_file instead of Docker secrets (Source: Docker Best Practices) |
+| DC-028 | medium | Service lacks a logging driver configuration with max-size (Source: Docker Best Practices) |
+| DC-029 | medium | Service tmpfs mounts lack explicit size limits (Source: Docker Best Practices) |
+| DC-030 | medium | Service binds to privileged ports (<1024) (Source: NIST SP 800-190) |
+| DC-031 | medium | Service lacks explicit depends_on for startup ordering (Source: Docker Best Practices) |
+| DC-032 | critical | Service uses cgroup_parent which can bypass isolation (Source: Docker Security) |
+| DC-033 | critical | Service defines userns_mode: host breaking user namespace isolation (Source: CIS Docker Benchmark) |
 
 ### Swarm rules (SW-*)
 
 | ID | Severity | Description |
 |----|----------|-------------|
-| SW-001 | medium | No explicit replica count defined |
-| SW-002 | critical | No CPU or memory resource limits |
-| SW-003 | low | No CPU or memory resource reservations |
-| SW-004 | critical | No restart policy or unbounded max_attempts |
-| SW-005 | low | No placement constraints |
-| SW-006 | medium | No rolling update configuration |
-| SW-007 | critical | Secrets passed via env vars instead of Docker secrets |
-| SW-008 | medium | Unversioned image (`:latest` or no tag) |
-| SW-009 | medium | Default network instead of explicit overlay |
-| SW-010 | medium | No healthcheck defined |
+| SW-001 | medium | Service deployed globally instead of replicated (Source: Docker Best Practices) |
+| SW-002 | medium | Service bound to manager nodes specifically (Source: CIS Docker Benchmark) |
+| SW-003 | medium | Port mappings exposed without routing mesh declarations (Source: TFE Base) |
+| SW-004 | medium | Overlay network explicitly disabled for multi-host topology (Source: NIST SP 800-190) |
+| SW-005 | medium | Node scheduling enforces strict single-node affinities (Source: CIS Docker Benchmark) |
+| SW-006 | medium | Volumes configured via host-paths rather than managed structures (Source: NIST SP 800-190) |
+| SW-007 | critical | Secrets bound into image rootfs instead of ephemeral memory (Source: CIS Docker Benchmark) |
+| SW-008 | high | Cluster update configuration ignores parallelism thresholds (Source: Docker Best Practices) |
+| SW-009 | high | Rollback configuration lacks determinism (Source: Docker Best Practices) |
+| SW-010 | medium | Service overrides host-level IPC configurations (Source: CIS Docker Benchmark) |
+| SW-011 | medium | Application explicitly links to Docker Unix socket (Source: NIST SP 800-190) |
+| SW-012 | critical | Service assumes implicit registry resolution context (Source: TFE Base) |
+| SW-013 | medium | Explicit DNS namespace hijacking across Swarm services (Source: CIS Docker Benchmark) |
+| SW-014 | medium | Memory reservations established without upper bound restrictions (Source: Docker Sec) |
+| SW-015 | medium | Processor reservations defined without scheduler enforcement (Source: Docker Sec) |
+| SW-016 | medium | Unverified container metadata propagated to cluster state (Source: NIST SP 800-190) |
+| SW-017 | medium | Logging driver defaults override centralized cluster transport (Source: Docker Best Practices) |
+| SW-018 | critical | Swarm manager auto-lock mode not explicitly handled (Source: CIS Docker Benchmark) |
+| SW-019 | critical | Swarm overlay network is unencrypted (Source: CIS Docker Benchmark) |
+| SW-020 | high | Swarm service uses host-bound volume mounts (Source: NIST SP 800-190) |
+| SW-021 | medium | Swarm nodes missing placement constraints / role separation (Source: NIST SP 800-190) |
+| SW-022 | critical | Swarm manager binding to untrusted / wildcard interfaces (0.0.0.0) (Source: CIS Docker Benchmark) |
+| SW-023 | medium | Swarm service does not declare rolling update parallelism limits (Source: Docker Best Practices) |
+| SW-024 | high | Swarm secret mapped to container filesystem improperly (Source: NIST SP 800-190) |
+| SW-025 | critical | Swarm service exposes management API ports (Source: CIS Docker Benchmark) |
+| SW-026 | medium | Swarm service lacks declarative CPU limits (Source: Docker Best Practices) |
+| SW-027 | medium | Swarm service lacks declarative memory limits (Source: Docker Best Practices) |
+| SW-028 | low | Swarm service deployment uses global mode (Source: Docker Best Practices) |
+| SW-029 | high | Swarm config mapped via env variables instead of Docker Configs (Source: Docker Best Practices) |
+| SW-030 | low | Swarm service ignores endpoint_mode dnsrr for internal discovery (Source: Docker Best Practices) |
+| SW-031 | high | Swarm service uses --cap-add=ALL (Source: CIS Docker Benchmark) |
+| SW-032 | medium | Swarm services bypassing routing mesh using explicit host ports (Source: Docker Security) |
+| SW-033 | medium | Swarm service deployed without healthcheck propagation (Source: CIS Docker Benchmark) |
 
 You can add custom rules by pointing `--rules` to your own JSON file following the same schema.
 

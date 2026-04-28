@@ -156,7 +156,52 @@ class ComposeAnalyzer:
 
         # Build ports list
         ports = svc_config.get("ports", [])
-
+        volumes = svc_config.get("volumes", [])
+        # --- DC-018 to DC-033 Extractions ---
+        cap_drop = svc_config.get("cap_drop", [])
+        dc_missing_cap_drop_all = "ALL" not in [str(c).upper() for c in cap_drop]
+        
+        sec_opt = svc_config.get("security_opt", [])
+        dc_missing_no_new_privileges = not any("no-new-privileges" in str(s).lower() for s in sec_opt)
+        
+        dc_mounts_sensitive_files = False
+        dc_exposes_docker_sock = False
+        dc_mounts_root = False
+        dc_mounts_etc = False
+        for vol in volumes:
+            vol_str = str(vol).lower()
+            if ".env" in vol_str or "id_rsa" in vol_str:
+                dc_mounts_sensitive_files = True
+            if "docker.sock" in vol_str:
+                dc_exposes_docker_sock = True
+            if vol_str.startswith("/:") or vol_str.startswith("/ ") or vol_str == "/":
+                dc_mounts_root = True
+            if vol_str.startswith("/etc:") or vol_str.startswith("/etc "):
+                dc_mounts_etc = True
+                
+        networks = svc_config.get("networks", {})
+        dc_no_custom_network = len(networks) == 0
+        dc_explicit_bridge = str(svc_config.get("network_mode", "")).lower() == "bridge"
+        dc_missing_read_only = not bool(svc_config.get("read_only", False))
+        dc_uses_env_file = bool(svc_config.get("env_file"))
+        
+        logging = svc_config.get("logging", {})
+        dc_missing_logging_config = "max-size" not in str(logging)
+        
+        tmpfs = svc_config.get("tmpfs", [])
+        dc_tmpfs_no_size = bool(tmpfs) and not isinstance(tmpfs, dict) # simplistic check
+        
+        dc_privileged_ports = False
+        for p in ports:
+            p_str = str(p)
+            parts = p_str.split(":")
+            host_port = parts[0]
+            if host_port.isdigit() and int(host_port) < 1024:
+                dc_privileged_ports = True
+                
+        dc_missing_depends_on = not bool(svc_config.get("depends_on"))
+        dc_uses_cgroup_parent = bool(svc_config.get("cgroup_parent"))
+        dc_userns_host = str(svc_config.get("userns_mode", "")).lower() == "host"
         # DC-006: privileged mode
         privileged = svc_config.get("privileged", False)
 
@@ -195,4 +240,21 @@ class ComposeAnalyzer:
             "ipc_mode": str(svc_config.get("ipc", "")).lower(),
             "has_mac_address": bool(svc_config.get("mac_address")),
             "has_dns": bool(svc_config.get("dns")),
+            "dc_missing_cap_drop_all": dc_missing_cap_drop_all,
+            "dc_missing_no_new_privileges": dc_missing_no_new_privileges,
+            "dc_mounts_sensitive_files": dc_mounts_sensitive_files,
+            "dc_no_custom_network": dc_no_custom_network,
+            "dc_exposes_docker_sock": dc_exposes_docker_sock,
+            "dc_missing_read_only": dc_missing_read_only,
+            "dc_explicit_bridge": dc_explicit_bridge,
+            "dc_mounts_root": dc_mounts_root,
+            "dc_mounts_etc": dc_mounts_etc,
+            "dc_uses_env_file": dc_uses_env_file,
+            "dc_missing_logging_config": dc_missing_logging_config,
+            "dc_tmpfs_no_size": dc_tmpfs_no_size,
+            "dc_privileged_ports": dc_privileged_ports,
+            "dc_missing_depends_on": dc_missing_depends_on,
+            "dc_uses_cgroup_parent": dc_uses_cgroup_parent,
+            "dc_userns_host": dc_userns_host,
+
         }

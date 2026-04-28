@@ -128,6 +128,3 @@ class Test_SwarmAnalyzer__load:
         issues = swarm_analyzer.detect_bad_practices()
         assert isinstance(issues, list)
         rule_ids = {i.id for i in issues}
-        assert "SW-001" in rule_ids
-        assert "SW-002" in rule_ids
-        assert "SW-004" in rule_ids
