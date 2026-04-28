@@ -63,6 +63,74 @@ class DockerImageAnalyzer:
 
         size_bytes = attrs.get("Size", 0)
         layers = rootfs.get("Layers", [])
+        
+        # history analysis
+        history = attrs.get("History", [])
+        history_has_add = False
+        history_sys_upgrade = False
+        history_secrets = False
+        history_missing_checksum = False
+        empty_layers = False
+        history_debug_tools = False
+        history_shell = False
+        history_pkg_mgr = False
+
+        for h in history:
+            cmd = h.get("CreatedBy", "").lower()
+            empty = h.get("EmptyLayer", False)
+            if empty:
+                empty_layers = True
+            if " add " in cmd:
+                history_has_add = True
+            if "apt-get upgrade" in cmd or "apk upgrade" in cmd or "yum upgrade" in cmd:
+                history_sys_upgrade = True
+            if any(s in cmd for s in ["password=", "secret=", "token=", "key="]):
+                history_secrets = True
+            if ("wget " in cmd or "curl " in cmd) and "sha256sum" not in cmd:
+                history_missing_checksum = True
+            if any(s in cmd for s in ["strace", "gdb", "curl ", "wget "]):
+                history_debug_tools = True
+            if any(s in cmd for s in ["bash", "sh ", "ash", "zsh"]):
+                history_shell = True
+            if any(s in cmd for s in ["apt ", "apt-get", "apk ", "yum ", "dnf "]):
+                history_pkg_mgr = True
+
+        
+        labels = config.get("Labels", {}) or {}
+        missing_oci = True
+        if "org.opencontainers.image.authors" in labels:
+            missing_oci = False
+            
+        has_sbom = "org.opencontainers.image.sbom" in labels or "io.anchore.sbom" in labels
+        has_slsa = "org.opencontainers.image.provenance" in labels or "slsa.dev/provenance" in labels
+
+            
+        expose = config.get("ExposedPorts", {}) or {}
+        expose_all = False
+        for k in expose:
+            if "0.0.0.0" in k:
+                expose_all = True
+                
+        env_vars = config.get("Env", []) or []
+        # crude proxy for full os base: if os is ubuntu/debian/centos and size > 200MB
+        full_os_base = False
+        if attrs.get("Os", "") == "linux" and size_bytes > 200 * 1024 * 1024:
+            if "ubuntu" in str(config.get("Image", "")).lower() or "debian" in str(config.get("Image", "")).lower():
+                full_os_base = True
+
+        debug_env = False
+        for e in env_vars:
+            if "DEBUG=1" in e or "NODE_ENV=development" in e.lower() or "NODE_ENV=dev" in e.lower():
+                debug_env = True
+                
+        user = str(config.get("User", ""))
+        explicit_root = False
+        if user.lower() in ["root", "0"]:
+            explicit_root = True
+            
+        volumes = config.get("Volumes", {}) or {}
+        permissive_vols = len(volumes) > 0 # basic check for now
+
 
         return {
             "size_mb": round(size_bytes / (1024 * 1024), 2),
@@ -77,6 +145,29 @@ class DockerImageAnalyzer:
             "has_exposed_ports": bool(config.get("ExposedPorts")),
             "is_scratch_root": not bool(config.get("Image", "")) and not bool(config.get("User")),
             "has_cmd_or_entrypoint": bool(config.get("Cmd")) or bool(config.get("Entrypoint")),
+            "img_no_healthcheck": not bool(config.get("Healthcheck")),
+            "img_no_trust": not bool(attrs.get("DockerVersion")), # rough proxy if we don't have trust data
+            "img_history_has_add": history_has_add,
+            "img_history_system_upgrade": history_sys_upgrade,
+            "img_generic_architecture": attrs.get("Architecture", "") not in ["amd64", "arm64", "s390x", "ppc64le"],
+            "img_history_secrets": history_secrets,
+            "img_explicit_root_user": explicit_root,
+            "img_huge_layers": False, # Requires deep dive into sizes, hard via simple attrs
+            "img_missing_oci_labels": missing_oci,
+            "img_expose_all_interfaces": expose_all,
+            "img_missing_os": not bool(attrs.get("Os")),
+            "img_debug_env_vars": debug_env,
+            "img_missing_entrypoint_or_cmd": not bool(config.get("Cmd")) and not bool(config.get("Entrypoint")),
+            "img_empty_layers": empty_layers,
+            "img_permissive_volumes": permissive_vols,
+            "img_history_missing_checksum": history_missing_checksum,
+            "img_missing_sbom": not has_sbom,
+            "img_missing_slsa": not has_slsa,
+            "img_full_os_base": full_os_base,
+            "img_debug_tools": history_debug_tools,
+            "img_shell_in_prod": history_shell,
+            "img_pkg_manager": history_pkg_mgr,
+
         }
 
     # ------------------------------------------------------------------
@@ -112,4 +203,20 @@ class DockerImageAnalyzer:
             "is_scratch_root": metadata.get("is_scratch_root", False),
             "tags": metadata.get("tags", []),
             "has_cmd_or_entrypoint": metadata.get("has_cmd_or_entrypoint", False),
+            "img_no_healthcheck": metadata.get("img_no_healthcheck", False),
+            "img_no_trust": metadata.get("img_no_trust", False),
+            "img_history_has_add": metadata.get("img_history_has_add", False),
+            "img_history_system_upgrade": metadata.get("img_history_system_upgrade", False),
+            "img_generic_architecture": metadata.get("img_generic_architecture", False),
+            "img_history_secrets": metadata.get("img_history_secrets", False),
+            "img_explicit_root_user": metadata.get("img_explicit_root_user", False),
+            "img_huge_layers": metadata.get("img_huge_layers", False),
+            "img_missing_oci_labels": metadata.get("img_missing_oci_labels", False),
+            "img_expose_all_interfaces": metadata.get("img_expose_all_interfaces", False),
+            "img_missing_os": metadata.get("img_missing_os", False),
+            "img_debug_env_vars": metadata.get("img_debug_env_vars", False),
+            "img_missing_entrypoint_or_cmd": metadata.get("img_missing_entrypoint_or_cmd", False),
+            "img_empty_layers": metadata.get("img_empty_layers", False),
+            "img_permissive_volumes": metadata.get("img_permissive_volumes", False),
+            "img_history_missing_checksum": metadata.get("img_history_missing_checksum", False),
         }

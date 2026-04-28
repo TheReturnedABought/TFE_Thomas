@@ -9,7 +9,7 @@ recommendation for fixing it.
 from dataclasses import dataclass
 from typing import Set
 
-VALID_SEVERITIES: Set[str] = {"low", "medium", "critical"}
+VALID_SEVERITIES: Set[str] = {"low", "medium", "high", "critical"}
 
 
 @dataclass

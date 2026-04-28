@@ -285,6 +285,8 @@ def mock_image_metadata():
         "os": "linux",
         "cmd": ["bash"],
         "exposed_ports": {"8080/tcp": {}},
+        "healthcheck": ["CMD", "curl", "-f", "http://localhost"],
+        "docker_version": "24.0.5",
     }
 
 

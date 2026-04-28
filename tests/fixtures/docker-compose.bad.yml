@@ -1,34 +1,28 @@
-version: "3.8"
+version: '3.8'
 services:
   web:
-    image: nginx:latest
-    container_name: forced_name
-    network_mode: "host"
-    pid: "host"
-    ipc: "host"
-    mac_address: "02:42:ac:11:00:02"
-    dns:
-      - 8.8.8.8
-    cap_add:
-      - ALL
-      - SYS_ADMIN
+    image: my-web:latest
+    privileged: true
+    user: root
     ports:
       - "0.0.0.0:80:80"
-      - "22:22"
-    privileged: true
+      - "443:443"
+    environment:
+      - DB_PASSWORD=supersecret
+      - AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
     volumes:
-      - ./html:/usr/share/nginx/html
-  api:
-    image: myapp
-    environment:
-      JWT_SECRET: hardcodedvalue
-      DB_PASSWORD: letmein
-  db:
-    image: postgres
-    environment:
-      POSTGRES_PASSWORD: supersecret
-  cache:
-    image: redis:latest
-    ports:
-      - "6379:6379"
-    privileged: true
+      - /:/host_root
+      - /etc:/host_etc
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./.env:/app/.env
+    cap_add:
+      - ALL
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM node:latest
+        WORKDIR relative/path
+        RUN npm install foo
+        EXPOSE 99999
+        HEALTHCHECK CMD curl -f http://localhost/ || exit 1
+        HEALTHCHECK CMD curl -f http://localhost/api || exit 1
