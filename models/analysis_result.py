@@ -35,7 +35,12 @@ class AnalysisResult:
 
     @property
     def severity_levels(self) -> Dict[str, int]:
-        """Return a fresh count of issues per severity level."""
+        """
+        Return a count of issues per severity level dynamically evaluated.
+
+        Returns:
+            Dict[str, int]: Mapping of severity levels to their respective counts.
+        """
         counts: Dict[str, int] = {"critical": 0, "medium": 0, "low": 0}
         for issue in self.issues:
             counts[issue.severity] = counts.get(issue.severity, 0) + 1
@@ -46,13 +51,21 @@ class AnalysisResult:
     # ------------------------------------------------------------------
 
     def add_issue(self, issue: Issue) -> None:
-        """Append an Issue to the result."""
+        """
+        Append an Issue finding to the result set.
+
+        Args:
+            issue (Issue): The detected analysis issue to add.
+        """
         self.issues.append(issue)
 
     def merge(self, other: AnalysisResult) -> None:
         """
-        Merge another AnalysisResult into this one.
+        Merge another AnalysisResult's issues, metadata, and performance metrics into this one.
         Useful when the Analyzer aggregates results from multiple sub-analyzers.
+
+        Args:
+            other (AnalysisResult): The other result container to merge.
         """
         self.issues.extend(other.issues)
         self.metadata.update(other.metadata)
@@ -64,9 +77,21 @@ class AnalysisResult:
             )
 
     def has_critical(self) -> bool:
+        """
+        Check if any critical-severity issues were detected.
+
+        Returns:
+            bool: True if there is at least one critical issue, False otherwise.
+        """
         return self.severity_levels.get("critical", 0) > 0
 
     def total_issues(self) -> int:
+        """
+        Get the total number of detected issues.
+
+        Returns:
+            int: The total count of issues.
+        """
         return len(self.issues)
 
     def __repr__(self) -> str:  # pragma: no cover
