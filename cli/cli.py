@@ -10,19 +10,38 @@ from core.analyzer import Analyzer
 from core.autofix import DockerfileFixer, YamlFixer
 from core.config import Config
 from core.i18n import get_text, set_locale
+from models.analysis_result import AnalysisResult
 from report.report_generator import ReportGenerator
 from report.sarif_generator import SarifGenerator
 
 
 class CLI:
-    """Parses CLI arguments, builds Config, runs analysis, and outputs results."""
+    """
+    Command-line interface controller for the DockCheck static analysis tool.
+
+    This class parses input parameters, maps options to runtime configurations,
+    initializes the core analysis orchestrator, applies automated remedies when
+    requested, and generates localized report summaries (both HTML and SARIF).
+    """
 
     SEVERITY_LEVELS = ["low", "medium", "critical"]
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """
+        Initialize the CLI controller.
+
+        Constructs the underlying argparse.ArgumentParser with all supported subcommands
+        and option configurations.
+        """
         self.parser = self._build_parser()
 
     def _build_parser(self) -> argparse.ArgumentParser:
+        """
+        Construct the command-line argument parser with all commands and subcommands.
+
+        Returns:
+            argparse.ArgumentParser: The built argument parser instance.
+        """
         parser = argparse.ArgumentParser(
             prog="dockcheck",
             description=(
@@ -131,7 +150,14 @@ Examples:
         return parser
 
     def run(self) -> int:
-        """Parse args, run analysis, generate report. Returns exit code."""
+        """
+        Parse parsed command line arguments, load locales, orchestrate analysis,
+        apply remediation if --fix is set, and return the process exit code.
+
+        Returns:
+            int: 0 if completed with no issues, 1 if issues are found,
+                 or 2 in case of runtime errors.
+        """
         args = self.parser.parse_args()
 
         # Override Locale translation dictionaries
@@ -204,8 +230,13 @@ Examples:
         # Exit code 1 if any issues found (useful for CI/CD pipelines)
         return 1 if result.issues else 0
 
-    def print_summary(self, result) -> None:
-        """Print a concise analysis summary to stdout."""
+    def print_summary(self, result: AnalysisResult) -> None:
+        """
+        Print a concise summary breakdown of the analysis findings to stdout.
+
+        Args:
+            result (AnalysisResult): The aggregated analysis outcome to print.
+        """
         print("\n" + "=" * 50)
         print("  DockCheck - Analysis Summary")
         print("=" * 50)
