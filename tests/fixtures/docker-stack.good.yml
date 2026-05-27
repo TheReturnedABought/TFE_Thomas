@@ -10,8 +10,41 @@ services:
     cap_drop:
       - ALL
     read_only: true
+    networks:
+      - app-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    stop_grace_period: 1m30s
     deploy:
       replicas: 2
       update_config:
         parallelism: 1
         delay: 10s
+        order: start-first
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      placement:
+        constraints:
+          - node.role == worker
+
+networks:
+  app-net:
+    driver: overlay
