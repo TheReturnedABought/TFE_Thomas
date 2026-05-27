@@ -26,6 +26,12 @@ class Analyzer:
     """
 
     def __init__(self, config: Config) -> None:
+        """
+        Initialize the top-level orchestrator with a runtime configuration.
+
+        Args:
+            config (Config): The parsed configuration containing paths and rules.
+        """
         self._config = config
         self._monitor = PerformanceMonitor()
 
@@ -37,6 +43,9 @@ class Analyzer:
 
         Applies the severity threshold from Config so that only issues at or
         above the configured level are included in the final result.
+
+        Returns:
+            AnalysisResult: The aggregated, severity-filtered analysis result.
         """
         self._monitor.start_timer()
         result = AnalysisResult()
@@ -85,6 +94,14 @@ class Analyzer:
     # ------------------------------------------------------------------
 
     def _run_dockerfile(self) -> AnalysisResult:
+        """
+        Execute static analysis on a target Dockerfile.
+
+        Performs file validation and delegates rule checks to DockerfileAnalyzer.
+
+        Returns:
+            AnalysisResult: The analysis outcome including any detected issues.
+        """
         from analyzers.dockerfile_analyzer import DockerfileAnalyzer
 
         path = self._config.get_option("dockerfile_path")
@@ -118,6 +135,14 @@ class Analyzer:
         return result
 
     def _run_compose(self) -> AnalysisResult:
+        """
+        Execute static analysis on a target Docker Compose file.
+
+        Performs file validation, checks security parameters, and detects service redundancies.
+
+        Returns:
+            AnalysisResult: The analysis outcome including security and redundancy findings.
+        """
         from analyzers.compose_analyzer import ComposeAnalyzer
 
         path = self._config.get_option("compose_path")
@@ -151,6 +176,14 @@ class Analyzer:
         return result
 
     def _run_image(self) -> AnalysisResult:
+        """
+        Execute analysis on a local Docker image's metadata and layer history.
+
+        Queries the local Docker daemon using the Docker client wrapper.
+
+        Returns:
+            AnalysisResult: The analysis outcome containing image metadata and rule issues.
+        """
         from analyzers.image_analyzer import DockerImageAnalyzer
 
         image_name = self._config.get_option("image_name")
@@ -179,6 +212,14 @@ class Analyzer:
         return result
 
     def _run_swarm(self) -> AnalysisResult:
+        """
+        Execute static analysis on a Docker Swarm stack deploy file.
+
+        Performs file validation and evaluates all Swarm-specific best practices.
+
+        Returns:
+            AnalysisResult: The analysis outcome including all Swarm issues found.
+        """
         from analyzers.swarm_analyzer import SwarmAnalyzer
 
         path = self._config.get_option("swarm_path")
@@ -212,8 +253,17 @@ class Analyzer:
 
     def _validate_path(self, path: str, component: str) -> Optional[Issue]:
         """
-        Hardened path validation to prevent crashes before analysis begins.
-        Checks for existence, file type, permissions, and size limits.
+        Perform defensive verification on a target path before executing sub-analysis.
+
+        Verifies that the target exists, is a regular file, is readable, and is within
+        size limits to prevent performance hangs or system runtime crashes.
+
+        Args:
+            path (str): The target file path to validate.
+            component (str): The name of the component context (e.g., 'dockerfile', 'compose').
+
+        Returns:
+            Optional[Issue]: A critical Issue if validation failed, otherwise None.
         """
         # Defensive type coercion (discovered via Deep Chaos Monte Carlo)
         if not isinstance(path, str):
@@ -273,3 +323,4 @@ class Analyzer:
             )
 
         return None
+
