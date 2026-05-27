@@ -24,6 +24,14 @@ class Issue:
     autofix: dict = None
 
     def __post_init__(self) -> None:
+        """
+        Validate and coerce Issue data fields after initialization.
+        Ensures type safety and validates against the allowed severity levels.
+
+        Raises:
+            ValueError: If the ID, description, or recommendation is empty,
+                        or if the severity is not one of VALID_SEVERITIES.
+        """
         # Type coercion (discovered via Deep Chaos Monte Carlo)
         self.id = str(self.id) if self.id is not None else ""
         self.description = str(self.description) if self.description is not None else ""
@@ -46,12 +54,27 @@ class Issue:
             raise ValueError("Issue.recommendation must not be empty.")
 
     def __repr__(self) -> str:
+        """
+        Return a formal string representation of the Issue instance.
+
+        Returns:
+            str: Formal string representation.
+        """
         return (
             f"Issue(id={self.id!r}, severity={self.severity!r}, "
             f"component={self.component!r}, description={self.description!r})"
         )
 
     def __eq__(self, other: object) -> bool:
+        """
+        Check structural equality between two Issue instances.
+
+        Args:
+            other (object): The other object to compare.
+
+        Returns:
+            bool: True if equal, False otherwise.
+        """
         if not isinstance(other, Issue):
             return NotImplemented
         return (
