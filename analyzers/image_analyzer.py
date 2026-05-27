@@ -33,6 +33,13 @@ class DockerImageAnalyzer:
     """
 
     def __init__(self, image_name: str, rules_path: Optional[str] = None) -> None:
+        """
+        Initialize the image analyzer and fetch image details from the local Docker daemon.
+
+        Args:
+            image_name (str): Name, tag, or ID of the local Docker image to analyze.
+            rules_path (str, optional): Optional path to a custom rules JSON file. Defaults to None.
+        """
         self._image_name = image_name
         self._rules_path = rules_path or _DEFAULT_RULES
         self._engine = RulesEngine(self._rules_path)
@@ -51,8 +58,8 @@ class DockerImageAnalyzer:
         Extract metadata from the Docker image.
 
         Returns:
-            dict with keys: size_mb, num_layers, base_image, labels,
-            env_vars, user, tags, architecture, os.
+            Dict[str, Any]: dictionary with keys: size_mb, num_layers, base_image, labels,
+                            env_vars, user, tags, architecture, os.
 
         Raises:
             docker.errors.ImageNotFound: if the image is not available locally.
@@ -179,7 +186,7 @@ class DockerImageAnalyzer:
         Run all image rules and return a list of Issue objects.
 
         Returns:
-            list of Issue objects (empty list if no problems found).
+            List[Issue]: A list of Issue objects found.
         """
         metadata = self.extract_metadata()
         context = self._build_context(metadata)
@@ -190,7 +197,15 @@ class DockerImageAnalyzer:
     # ------------------------------------------------------------------
 
     def _build_context(self, metadata: Dict[str, Any]) -> Dict[str, Any]:
-        """Convert extracted metadata into a context dict for the RulesEngine."""
+        """
+        Convert extracted image metadata into a flat context dictionary for the RulesEngine.
+
+        Args:
+            metadata (Dict[str, Any]): Dictionary of extracted image metadata attributes.
+
+        Returns:
+            Dict[str, Any]: A context dictionary for evaluation by the RulesEngine.
+        """
         return {
             "component": "image",
             "base_image": metadata.get("base_image", ""),
