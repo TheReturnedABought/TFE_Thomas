@@ -57,6 +57,9 @@ class DockerfileAnalyzer:
     # ------------------------------------------------------------------
 
     def _load(self) -> None:
+        """
+        Load the raw text content of the Dockerfile from the filesystem.
+        """
         with open(self._path, encoding="utf-8") as fh:
             self._content = fh.read()
 
@@ -69,7 +72,7 @@ class DockerfileAnalyzer:
         Parse the Dockerfile into a list of AST Node objects.
 
         Returns:
-            list of DockerNode derivatives (empty list for an empty Dockerfile).
+            List[DockerNode]: A list of DockerNode derivatives.
         """
         if self._instructions is not None:
             return self._instructions
@@ -91,7 +94,7 @@ class DockerfileAnalyzer:
         Run all Dockerfile rules and return a list of Issue objects.
 
         Returns:
-            list of Issue objects (empty list if no problems found).
+            List[Issue]: A list of Issue objects found in the Dockerfile.
         """
         instructions = self.parse_dockerfile()
         context = self._build_context(instructions)
@@ -102,7 +105,18 @@ class DockerfileAnalyzer:
     # ------------------------------------------------------------------
 
     def _build_context(self, instructions: List[DockerNode]) -> Dict[str, Any]:
-        """Convert the AST node list into a context dict for the RulesEngine."""
+        """
+        Convert the parsed AST node list into a flat context dictionary for the RulesEngine.
+
+        Evaluates individual nodes, checks flags, counts instructions, and populates
+        rule evaluation keys such as package manager commands, user states, healthchecks, etc.
+
+        Args:
+            instructions (List[DockerNode]): List of parsed AST nodes from the Dockerfile.
+
+        Returns:
+            Dict[str, Any]: A context dictionary populated with boolean states and parameters.
+        """
 
         if not isinstance(instructions, list):
             return {"component": "dockerfile"}
