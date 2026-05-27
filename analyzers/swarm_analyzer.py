@@ -50,6 +50,9 @@ class SwarmAnalyzer:
     # ------------------------------------------------------------------
 
     def _load(self) -> None:
+        """
+        Load and parse the Swarm stack YAML file into memory.
+        """
         with open(self._path, encoding="utf-8") as fh:
             self._data = yaml.safe_load(fh) or {}
 
@@ -58,7 +61,12 @@ class SwarmAnalyzer:
     # ------------------------------------------------------------------
 
     def analyze_services(self) -> List[str]:
-        """Return the list of service names in the stack file."""
+        """
+        Return the list of service names defined in the stack file.
+
+        Returns:
+            List[str]: A list of service name strings.
+        """
         services = self._data.get("services", {})
         if not services:
             return []
@@ -73,7 +81,7 @@ class SwarmAnalyzer:
         Run all Swarm rules against every service and return found issues.
 
         Returns:
-            list of Issue objects.
+            List[Issue]: A list of Issue objects found.
         """
         issues: List[Issue] = []
         services = self._data.get("services", {})
@@ -106,7 +114,21 @@ class SwarmAnalyzer:
         svc_config: Dict[str, Any],
         top_level_networks: Dict[str, Any],
     ) -> Dict[str, Any]:
-        """Build a context dict for a single Swarm service."""
+        """
+        Build a flat context dictionary for a single Swarm service.
+
+        Extracts scaling configurations, limits/reservations, placement constraints,
+        explicit network overlay alignments, healthcheck setups, log collectors,
+        restart policy delay validations, and storage binding properties.
+
+        Args:
+            svc_name (str): The unique name of the Swarm service.
+            svc_config (Dict[str, Any]): The raw dictionary mapping of the service configuration.
+            top_level_networks (Dict[str, Any]): The dictionary containing top-level networks.
+
+        Returns:
+            Dict[str, Any]: A context dictionary for evaluation by the RulesEngine.
+        """
         if not isinstance(svc_config, dict):
             return {"component": "swarm"}
 
