@@ -25,6 +25,12 @@
 
 DockCheck is a command-line tool that performs **static analysis** of Docker environments without requiring a running daemon (except for image metadata extraction). It targets DevOps engineers and system integrators who need to automate quality and security checks on their Docker assets.
 
+It features **142 built-in rules** spanning across Dockerfiles, Compose files, Swarm stacks, and Docker images:
+- **50 Dockerfile rules** (`DF-*`)
+- **33 Docker Swarm rules** (`SW-*`)
+- **32 Docker Compose rules** (`DC-*`)
+- **27 Docker Image rules** (`IMG-*`)
+
 It fills a gap left by existing tools:
 
 | Tool | Dockerfile | Compose | Swarm | HTML report |
@@ -259,7 +265,15 @@ dockcheck/
 
 Rules are defined in `rules/default_rules.json`. Each rule has an `id`, `severity`, `description`, `recommendation`, and a `check` key that maps to an evaluator function.
 
-**Built-in rules:**
+DockCheck comes packed with **142 built-in rules**:
+- **50 Dockerfile rules** (`DF-001` to `DF-051`)
+- **27 Image rules** (`IMG-001` to `IMG-033`)
+- **32 Compose rules** (`DC-001` to `DC-033`)
+- **33 Swarm rules** (`SW-001` to `SW-033`)
+
+You can also define and inject custom rules via the `--rules` parameter.
+
+**Built-in rules breakdown:**
 
 ### Dockerfile rules (DF-*)
 
