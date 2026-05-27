@@ -45,6 +45,9 @@ class ComposeAnalyzer:
     # ------------------------------------------------------------------
 
     def _load(self) -> None:
+        """
+        Load and parse the Docker Compose YAML file into memory.
+        """
         with open(self._path, encoding="utf-8") as fh:
             self._data = yaml.safe_load(fh) or {}
 
@@ -57,7 +60,7 @@ class ComposeAnalyzer:
         Return a list of service names defined in the Compose file.
 
         Returns:
-            list of service name strings (empty list if no services section).
+            List[str]: A list of service name strings.
         """
         services = self._data.get("services", {})
         if not services:
@@ -76,7 +79,7 @@ class ComposeAnalyzer:
         name in the component field for traceability.
 
         Returns:
-            list of Issue objects.
+            List[Issue]: A list of Issue objects found.
         """
         issues: List[Issue] = []
         services = self._data.get("services", {})
@@ -102,7 +105,7 @@ class ComposeAnalyzer:
         Detect redundant / duplicate service images (DC-005).
 
         Returns:
-            list of Issue objects (empty if no duplicates found).
+            List[Issue]: A list of Issue objects found (empty if no duplicates found).
         """
         services = self._data.get("services", {})
         image_map: Dict[str, List[str]] = {}
@@ -138,7 +141,20 @@ class ComposeAnalyzer:
     def _build_service_context(
         self, svc_name: str, svc_config: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """Build a context dict for a single Compose service."""
+        """
+        Build a flat context dictionary for a single Compose service.
+
+        Parses individual configurations, maps list attributes (ports, environments, volumes),
+        checks capability drops, volume sensitivity, read-only options, logging configs,
+        privileged flags, user names, and namespace isolation bounds.
+
+        Args:
+            svc_name (str): The unique name of the Compose service.
+            svc_config (Dict[str, Any]): The raw dictionary mapping of the service configuration.
+
+        Returns:
+            Dict[str, Any]: A context dictionary for evaluation by the RulesEngine.
+        """
         if not isinstance(svc_config, dict):
             return {"component": "compose"}
 
