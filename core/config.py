@@ -28,6 +28,12 @@ class Config:
     SEVERITY_ORDER = {"low": 0, "medium": 1, "critical": 2}
 
     def __init__(self, options: Dict[str, Any]) -> None:
+        """
+        Initialize the runtime Configuration with a dictionary of option mappings.
+
+        Args:
+            options (Dict[str, Any]): Dictionary of runtime configuration variables.
+        """
         if not isinstance(options, dict):
             options = {}
         self._options = options
@@ -39,8 +45,15 @@ class Config:
     @classmethod
     def from_cli(cls, args) -> Config:
         """
-        Build a Config from parsed argparse Namespace.
-        Hardened to ensure path-like attributes are strings or None.
+        Factory method to construct a Config instance from parsed CLI arguments.
+
+        Sanitizes path attributes to ensure type consistency (str or None).
+
+        Args:
+            args (argparse.Namespace): The parsed CLI arguments namespace.
+
+        Returns:
+            Config: A populated Config instance.
         """
 
         def _get_str(obj, attr):
@@ -74,16 +87,31 @@ class Config:
     # ------------------------------------------------------------------
 
     def get_option(self, key: str, default: Any = None) -> Any:
-        """Return the value for *key*, or *default* if not found."""
+        """
+        Retrieve a configuration option by its key.
+
+        Args:
+            key (str): The configuration setting key to lookup.
+            default (Any, optional): Fallback value if key is not set. Defaults to None.
+
+        Returns:
+            Any: The configured value or the specified default fallback.
+        """
         if not isinstance(key, str):
             return default
         return self._options.get(key, default)
 
     def severity_passes(self, severity: str) -> bool:
         """
-        Return True if *severity* meets or exceeds the configured threshold.
+        Determine if a given severity level meets or exceeds the configured threshold.
 
-        Example: threshold="medium" → low=False, medium=True, critical=True
+        Used to dynamically filter reported analysis issues based on user-supplied thresholds.
+
+        Args:
+            severity (str): The severity level to test (e.g., 'low', 'medium', 'critical').
+
+        Returns:
+            bool: True if the severity passes the threshold filters, False otherwise.
         """
         if not isinstance(severity, str):
             return False
@@ -98,14 +126,32 @@ class Config:
 
     @property
     def command(self) -> Optional[str]:
+        """
+        Get the parsed sub-analysis command to execute.
+
+        Returns:
+            Optional[str]: The command name or None.
+        """
         return self._options.get("command")
 
     @property
     def output_path(self) -> str:
+        """
+        Get the target path for the generated HTML report file.
+
+        Returns:
+            str: Absolute or relative output path. Defaults to 'dockcheck_report.html'.
+        """
         return self._options.get("output", "dockcheck_report.html")
 
     @property
     def rules_path(self) -> Optional[str]:
+        """
+        Get the custom rules JSON file path if specified.
+
+        Returns:
+            Optional[str]: The path to the custom rules file, or None if built-in rules are used.
+        """
         return self._options.get("rules")
 
     def __repr__(self) -> str:  # pragma: no cover
