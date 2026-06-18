@@ -24,7 +24,7 @@ class CLI:
     requested, and generates localized report summaries (both HTML and SARIF).
     """
 
-    SEVERITY_LEVELS = ["low", "medium", "critical"]
+    SEVERITY_LEVELS = ["low", "medium", "high", "critical"]
 
     def __init__(self) -> None:
         """
@@ -251,7 +251,7 @@ Examples:
         for issue in result.issues:
             counts[issue.severity] = counts.get(issue.severity, 0) + 1
 
-        for severity in ["critical", "medium", "low"]:
+        for severity in ["critical", "high", "medium", "low"]:
             count = counts.get(severity, 0)
             if count:
                 print(f"    [{severity.upper():^8}] {count} issue(s)")

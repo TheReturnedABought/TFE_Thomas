@@ -14,6 +14,8 @@
             --text-muted: #94a3b8;
             --critical: #ef4444;
             --critical-bg: rgba(239,68,68,0.12);
+            --high: #f97316;          /* orange for high severity */
+            --high-bg: rgba(249,115,22,0.12);
             --medium: #f59e0b;
             --medium-bg: rgba(245,158,11,0.12);
             --low: #3b82f6;
@@ -37,7 +39,7 @@
         /* Summary cards */
         .summary {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 1rem;
             margin-bottom: 2rem;
         }
@@ -51,6 +53,7 @@
         .card .number { font-size: 2rem; font-weight: 700; }
         .card .label { color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
         .card.critical .number { color: var(--critical); }
+        .card.high .number { color: var(--high); }
         .card.medium .number { color: var(--medium); }
         .card.low .number { color: var(--low); }
         .card.total .number { color: var(--text); }
@@ -71,8 +74,9 @@
             border-left: 4px solid var(--border);
         }
         .issue.critical { border-left-color: var(--critical); background: var(--critical-bg); }
-        .issue.medium { border-left-color: var(--medium); background: var(--medium-bg); }
-        .issue.low { border-left-color: var(--low); background: var(--low-bg); }
+        .issue.high     { border-left-color: var(--high);     background: var(--high-bg); }
+        .issue.medium   { border-left-color: var(--medium);   background: var(--medium-bg); }
+        .issue.low      { border-left-color: var(--low);      background: var(--low-bg); }
         .issue-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem; }
         .issue-id { font-weight: 600; font-family: monospace; }
         .badge {
@@ -85,8 +89,9 @@
             letter-spacing: 0.04em;
         }
         .badge.critical { background: var(--critical); color: #fff; }
-        .badge.medium { background: var(--medium); color: #000; }
-        .badge.low { background: var(--low); color: #fff; }
+        .badge.high     { background: var(--high);     color: #fff; }
+        .badge.medium   { background: var(--medium);   color: #000; }
+        .badge.low      { background: var(--low);      color: #fff; }
         .issue-component { color: var(--text-muted); font-size: 0.85rem; }
         .issue-desc { margin: 0.3rem 0; }
 
@@ -135,6 +140,10 @@
             <div class="number">{{ severity_levels.get('critical', 0) }}</div>
             <div class="label">{{ get_text('html.critical', 'Critical') }}</div>
         </div>
+        <div class="card high">
+            <div class="number">{{ severity_levels.get('high', 0) }}</div>
+            <div class="label">{{ get_text('html.high', 'High') }}</div>
+        </div>
         <div class="card medium">
             <div class="number">{{ severity_levels.get('medium', 0) }}</div>
             <div class="label">{{ get_text('html.medium', 'Medium') }}</div>
@@ -173,7 +182,7 @@
     <div class="success-box">✓ {{ get_text('html.no_issues_detected', 'No issues detected — all checks passed.') }}</div>
     {% else %}
 
-    {% for severity in ['critical', 'medium', 'low'] %}
+    {% for severity in ['critical', 'high', 'medium', 'low'] %}
     {% if issues_by_severity[severity] %}
     <h3>{{ get_text('severity_' ~ severity, severity) | upper }} ({{ issues_by_severity[severity] | length }})</h3>
     {% for issue in issues_by_severity[severity] %}
@@ -233,14 +242,15 @@
         new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: ['Critical', 'Medium', 'Low'],
+                labels: ['Critical', 'High', 'Medium', 'Low'],
                 datasets: [{
                     data: [
                         {{ severity_levels.get('critical', 0) }},
+                        {{ severity_levels.get('high', 0) }},
                         {{ severity_levels.get('medium', 0) }},
                         {{ severity_levels.get('low', 0) }}
                     ],
-                    backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6'],
+                    backgroundColor: ['#ef4444', '#f97316', '#f59e0b', '#3b82f6'],
                     borderWidth: 0,
                     hoverOffset: 4
                 }]
