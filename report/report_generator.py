@@ -50,7 +50,7 @@ class ReportGenerator:
         template = self._env.get_template("report.html.j2")
 
         # Organise issues by severity for the template
-        issues_by_severity = {"critical": [], "high": [], "medium": [], "low": []}
+        issues_by_severity = {"critical": [], "medium": [], "low": []}
         for issue in result.issues:
             issues_by_severity.setdefault(issue.severity, []).append(issue)
 

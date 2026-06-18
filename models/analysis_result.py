@@ -41,7 +41,7 @@ class AnalysisResult:
         Returns:
             Dict[str, int]: Mapping of severity levels to their respective counts.
         """
-        counts: Dict[str, int] = {"critical": 0, "high": 0, "medium": 0, "low": 0}
+        counts: Dict[str, int] = {"critical": 0, "medium": 0, "low": 0}
         for issue in self.issues:
             counts[issue.severity] = counts.get(issue.severity, 0) + 1
         return counts
