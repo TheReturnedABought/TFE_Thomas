@@ -25,7 +25,7 @@ class Config:
         compose_path    : str|None — for "compose" / "all" commands
     """
 
-    SEVERITY_ORDER = {"low": 0, "medium": 1, "critical": 2}
+    SEVERITY_ORDER = {"low": 0, "medium": 1, "high":1.5, "critical": 2}
 
     def __init__(self, options: Dict[str, Any]) -> None:
         """
